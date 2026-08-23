@@ -47,7 +47,8 @@ A fully functional, native Discord tournament bot tailored for community hubs. T
 - `!leave {game}`: Remove yourself from a scheduled tournament.
 - `!drop`: Forfeit remaining matches in a live tournament.
 
-### Live Execution (`!start`, `!bracket`, `!win`, `!sync`, `!dq`)
+### Live Execution (`!start`, `!bracket`, `!win`, `!sync`, `!dq`, `!linkbracket`)
+- `!linkbracket {game} {event_id} [slug]`: Link a manually created Start.gg event (admin only).
 - `!start {game}`: Lock the roster and generate the bracket.
 - `!bracket {game}`: Display the current bracket.
 - `!win {score}`: Report a match victory (e.g., `!win 2-1`).

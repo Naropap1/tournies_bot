@@ -413,6 +413,39 @@ class LiveCog(commands.Cog, name="Live"):
             # Announce newly opened matches
             await _announce_open_matches(ctx, tournament_found, newly_opened)
 
+    @commands.command(name="linkbracket")
+    @commands.has_permissions(administrator=True)
+    async def link_startgg_bracket(
+        self, ctx: commands.Context, game: str, event_id: int, slug: str = ""
+    ) -> None:
+        """
+        Link a manually created Start.gg event to a scheduled/live tournament.
+
+        Usage: !linkbracket {game} {event_id} [slug]
+        Example: !linkbracket Smash 1234567 my-cool-tournament/events/melee
+        """
+        tournament = await self.bot.db.get_tournament_by_game(ctx.guild.id, game, status="scheduled")
+        if not tournament:
+            tournament = await self.bot.db.get_tournament_by_game(ctx.guild.id, game, status="live")
+
+        if not tournament:
+            await ctx.send(f"❌ No scheduled or live `{game}` tournament found to link.")
+            return
+
+        await self.bot.db.update_tournament(
+            tournament.id, startgg_event_id=event_id, startgg_slug=slug
+        )
+
+        embed = discord.Embed(
+            title=f"🔗 Start.gg Bracket Linked: {game}",
+            description=f"Successfully linked to Event ID: `{event_id}`",
+            color=discord.Color.green(),
+        )
+        if slug:
+            embed.add_field(name="Link", value=f"https://start.gg/{slug}")
+        await ctx.send(embed=embed)
+        logger.info("Tournament #%d linked to Start.gg event %d by %s", tournament.id, event_id, ctx.author)
+
     @commands.command(name="sync")
     @commands.has_permissions(administrator=True)
     async def sync_bracket(self, ctx: commands.Context, *, game: str = "") -> None:
