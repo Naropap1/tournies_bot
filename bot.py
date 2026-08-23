@@ -43,6 +43,7 @@ class TourniesBot(commands.Bot):
             description=BOT_DESCRIPTION,
             intents=intents,
             help_command=commands.DefaultHelpCommand(),
+            case_insensitive=True,
         )
         self.db = Database(DB_PATH)
 
