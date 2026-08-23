@@ -13,25 +13,14 @@ class Tournament:
     status: str
     created_at: datetime
     id: Optional[int] = None
-    startgg_slug: Optional[str] = None
-    startgg_event_id: Optional[int] = None
 
 @dataclass
 class Entrant:
     tournament_id: int
     discord_id: int
-    is_phantom: bool
     joined_at: datetime
     id: Optional[int] = None
-    startgg_tag: Optional[str] = None
-    startgg_entrant_id: Optional[int] = None
     dropped: bool = False
-
-@dataclass
-class LinkedAccount:
-    discord_id: int
-    startgg_tag: str
-    guild_id: int
 
 @dataclass
 class Match:
@@ -44,7 +33,6 @@ class Match:
     winner_id: Optional[int] = None
     score: Optional[str] = None
     status: str = 'pending'
-    startgg_set_id: Optional[int] = None
     is_grand_finals: bool = False
     best_of: int = 3
 

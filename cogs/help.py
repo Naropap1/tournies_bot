@@ -52,12 +52,7 @@ class HelpCog(commands.Cog, name="Help"):
             value="For admins: How to start the tournament, manage the bracket, and DQ players.",
             inline=False,
         )
-        embed.add_field(
-            name="🔗 `!help startgg`",
-            value="Detailed guide on how to manually create a Start.gg bracket and link it to the bot.",
-            inline=False,
-        )
-        embed.set_footer(text="Type !help <category> (e.g. !help startgg) to read a guide.")
+        embed.set_footer(text="Type !help <category> (e.g. !help live) to read a guide.")
         await ctx.send(embed=embed)
 
     @custom_help.command(name="schedule")
@@ -107,7 +102,6 @@ class HelpCog(commands.Cog, name="Help"):
             name="1. Linking Start.gg (Optional)",
             value=(
                 "If the tournament uses a Start.gg bracket, you should link your account so you appear correctly.\n"
-                "**Usage:** `!link {your_startgg_tag}` (e.g., `!link MkLeo`)\n"
                 "If you don't link, you will participate as a local 'phantom' entrant."
             ),
             inline=False,
@@ -172,47 +166,6 @@ class HelpCog(commands.Cog, name="Help"):
         embed.add_field(
             name="4. Conclusion",
             value="When Grand Finals finishes, the bot automatically crowns the champion on the `!leaderboard` and schedules the next event based on the recurring frequency.",
-            inline=False,
-        )
-        await ctx.send(embed=embed)
-
-    @custom_help.command(name="startgg")
-    async def help_startgg(self, ctx: commands.Context) -> None:
-        """Detailed guide on Start.gg integration."""
-        embed = discord.Embed(
-            title="🔗 Guide: Start.gg Integration",
-            description=(
-                "Because Start.gg does not allow bots to create tournaments automatically, "
-                "you must create the bracket manually on their website and link it to the bot if you want Start.gg integration."
-            ),
-            color=discord.Color.orange(),
-        )
-        embed.add_field(
-            name="Step 1: Create on Start.gg",
-            value=(
-                "1. Go to Start.gg and create a new Tournament.\n"
-                "2. Make it **Unlisted** (in the Publishing settings) so it stays private to your Discord.\n"
-                "3. Create an Event (e.g., 'Singles') and a Phase (e.g., 'Double Elimination Bracket')."
-            ),
-            inline=False,
-        )
-        embed.add_field(
-            name="Step 2: Get the Event ID",
-            value=(
-                "You need the **Event ID** (a number like `123456`).\n"
-                "Find this by going to your Tournament Settings -> Events -> click your event. The ID is in the URL or the settings page."
-            ),
-            inline=False,
-        )
-        embed.add_field(
-            name="Step 3: Link to the Bot",
-            value=(
-                "In your Discord server, run:\n"
-                "`!linkbracket {game} {event_id} {bracket_url_slug}`\n\n"
-                "**Example:**\n"
-                "`!linkbracket Smash 987654 my-tourney-name/events/singles`\n\n"
-                "Once linked, when players run `!win`, the bot will automatically report the set results to Start.gg behind the scenes!"
-            ),
             inline=False,
         )
         await ctx.send(embed=embed)

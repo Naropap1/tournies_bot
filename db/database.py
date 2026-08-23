@@ -2,7 +2,7 @@ import aiosqlite
 from datetime import datetime
 from typing import Optional, List, Any, Dict
 
-from .models import Tournament, Entrant, LinkedAccount, Match, Champion, AlertLog
+from .models import Tournament, Entrant, Match, Champion, AlertLog
 
 class Database:
     def __init__(self, db_path: str):
@@ -34,8 +34,6 @@ class Database:
                 scheduled_at TEXT NOT NULL,
                 frequency TEXT NOT NULL,
                 status TEXT NOT NULL,
-                startgg_slug TEXT,
-                startgg_event_id INTEGER,
                 created_at TEXT NOT NULL
             )
         """)
@@ -45,21 +43,9 @@ class Database:
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 tournament_id INTEGER NOT NULL,
                 discord_id INTEGER NOT NULL,
-                startgg_tag TEXT,
-                startgg_entrant_id INTEGER,
-                is_phantom BOOLEAN NOT NULL,
                 joined_at TEXT NOT NULL,
                 dropped BOOLEAN NOT NULL DEFAULT 0,
                 FOREIGN KEY (tournament_id) REFERENCES tournaments (id) ON DELETE CASCADE
-            )
-        """)
-
-        await self._conn.execute("""
-            CREATE TABLE IF NOT EXISTS linked_accounts (
-                discord_id INTEGER NOT NULL,
-                startgg_tag TEXT NOT NULL,
-                guild_id INTEGER NOT NULL,
-                PRIMARY KEY (discord_id, guild_id)
             )
         """)
 
@@ -74,7 +60,6 @@ class Database:
                 winner_id INTEGER,
                 score TEXT,
                 status TEXT NOT NULL,
-                startgg_set_id INTEGER,
                 is_grand_finals BOOLEAN NOT NULL DEFAULT 0,
                 best_of INTEGER NOT NULL DEFAULT 3,
                 FOREIGN KEY (tournament_id) REFERENCES tournaments (id) ON DELETE CASCADE
@@ -114,8 +99,6 @@ class Database:
             scheduled_at=datetime.fromisoformat(row['scheduled_at']),
             frequency=row['frequency'],
             status=row['status'],
-            startgg_slug=row['startgg_slug'],
-            startgg_event_id=row['startgg_event_id'],
             created_at=datetime.fromisoformat(row['created_at'])
         )
 
@@ -125,10 +108,10 @@ class Database:
         cursor = await self._conn.execute(
             """
             INSERT INTO tournaments 
-            (guild_id, channel_id, game, creator_id, scheduled_at, frequency, status, startgg_slug, startgg_event_id, created_at)
+            (guild_id, channel_id, game, creator_id, scheduled_at, frequency, status, created_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
-            (t.guild_id, t.channel_id, t.game, t.creator_id, t.scheduled_at.isoformat(), t.frequency, t.status, t.startgg_slug, t.startgg_event_id, t.created_at.isoformat())
+            (t.guild_id, t.channel_id, t.game, t.creator_id, t.scheduled_at.isoformat(), t.frequency, t.status, t.created_at.isoformat())
         )
         await self._conn.commit()
         return cursor.lastrowid
@@ -192,8 +175,6 @@ class Database:
             id=row['id'],
             tournament_id=row['tournament_id'],
             discord_id=row['discord_id'],
-            startgg_tag=row['startgg_tag'],
-            startgg_entrant_id=row['startgg_entrant_id'],
             is_phantom=bool(row['is_phantom']),
             joined_at=datetime.fromisoformat(row['joined_at']),
             dropped=bool(row['dropped'])
@@ -205,10 +186,10 @@ class Database:
         cursor = await self._conn.execute(
             """
             INSERT INTO entrants 
-            (tournament_id, discord_id, startgg_tag, startgg_entrant_id, is_phantom, joined_at, dropped)
+            (tournament_id, discord_id, joined_at, dropped)
             VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
-            (e.tournament_id, e.discord_id, e.startgg_tag, e.startgg_entrant_id, e.is_phantom, e.joined_at.isoformat(), e.dropped)
+            (e.tournament_id, e.discord_id, e.joined_at.isoformat(), e.dropped)
         )
         await self._conn.commit()
         return cursor.lastrowid
@@ -262,57 +243,16 @@ class Database:
         )
         await self._conn.commit()
 
-    async def link_account(self, discord_id: int, startgg_tag: str, guild_id: int) -> None:
-        if not self._conn:
-            raise RuntimeError("Database not initialized")
-        await self._conn.execute(
-            """
-            INSERT INTO linked_accounts (discord_id, startgg_tag, guild_id)
-            VALUES (?, ?, ?)
-            ON CONFLICT(discord_id, guild_id) DO UPDATE SET startgg_tag=excluded.startgg_tag
-            """,
-            (discord_id, startgg_tag, guild_id)
-        )
-        await self._conn.commit()
-
-    async def get_linked_account(self, discord_id: int, guild_id: int) -> Optional[LinkedAccount]:
-        if not self._conn:
-            raise RuntimeError("Database not initialized")
-        async with self._conn.execute(
-            "SELECT * FROM linked_accounts WHERE discord_id = ? AND guild_id = ?",
-            (discord_id, guild_id)
-        ) as cursor:
-            row = await cursor.fetchone()
-            if row:
-                return LinkedAccount(discord_id=row['discord_id'], startgg_tag=row['startgg_tag'], guild_id=row['guild_id'])
-        return None
-
-    def _row_to_match(self, row: aiosqlite.Row) -> Match:
-        return Match(
-            id=row['id'],
-            tournament_id=row['tournament_id'],
-            round_num=row['round_num'],
-            match_number=row['match_number'],
-            player1_id=row['player1_id'],
-            player2_id=row['player2_id'],
-            winner_id=row['winner_id'],
-            score=row['score'],
-            status=row['status'],
-            startgg_set_id=row['startgg_set_id'],
-            is_grand_finals=bool(row['is_grand_finals']),
-            best_of=row['best_of']
-        )
-
     async def insert_match(self, m: Match) -> int:
         if not self._conn:
             raise RuntimeError("Database not initialized")
         cursor = await self._conn.execute(
             """
             INSERT INTO matches 
-            (tournament_id, round_num, match_number, player1_id, player2_id, winner_id, score, status, startgg_set_id, is_grand_finals, best_of)
+            (tournament_id, round_num, match_number, player1_id, player2_id, winner_id, score, status, is_grand_finals, best_of)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
-            (m.tournament_id, m.round_num, m.match_number, m.player1_id, m.player2_id, m.winner_id, m.score, m.status, m.startgg_set_id, m.is_grand_finals, m.best_of)
+            (m.tournament_id, m.round_num, m.match_number, m.player1_id, m.player2_id, m.winner_id, m.score, m.status, m.m.is_grand_finals, m.best_of)
         )
         await self._conn.commit()
         return cursor.lastrowid
@@ -323,11 +263,11 @@ class Database:
         await self._conn.executemany(
             """
             INSERT INTO matches 
-            (tournament_id, round_num, match_number, player1_id, player2_id, winner_id, score, status, startgg_set_id, is_grand_finals, best_of)
+            (tournament_id, round_num, match_number, player1_id, player2_id, winner_id, score, status, is_grand_finals, best_of)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             [
-                (m.tournament_id, m.round_num, m.match_number, m.player1_id, m.player2_id, m.winner_id, m.score, m.status, m.startgg_set_id, m.is_grand_finals, m.best_of)
+                (m.tournament_id, m.round_num, m.match_number, m.player1_id, m.player2_id, m.winner_id, m.score, m.status, m.m.is_grand_finals, m.best_of)
                 for m in matches
             ]
         )

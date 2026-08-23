@@ -16,7 +16,6 @@ from discord.ext import commands
 
 from config import COMMAND_PREFIX, DISCORD_TOKEN, BOT_DESCRIPTION, DB_PATH
 from db.database import Database
-from startgg.client import StartGGClient
 
 # ── Logging setup ──────────────────────────────────────────────────────
 logging.basicConfig(
@@ -46,7 +45,6 @@ class TourniesBot(commands.Bot):
             help_command=commands.DefaultHelpCommand(),
         )
         self.db = Database(DB_PATH)
-        self.startgg = StartGGClient()
 
     async def setup_hook(self) -> None:
         """Called when the bot is starting up. Initialize DB and load cogs."""
@@ -61,6 +59,7 @@ class TourniesBot(commands.Bot):
             "cogs.participation",
             "cogs.live",
             "cogs.prestige",
+            "cogs.testing",
             "tasks.alerts",
         ]
         for cog in cog_names:
@@ -104,7 +103,6 @@ class TourniesBot(commands.Bot):
     async def close(self) -> None:
         """Clean shutdown: close DB and Start.gg client before disconnecting."""
         logger.info("Shutting down...")
-        await self.startgg.close()
         await self.db.close()
         await super().close()
 

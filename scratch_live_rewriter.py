@@ -1,4 +1,6 @@
-"""
+import os
+
+code = '''"""
 Live Execution Cog — !start, !bracket, !win, !dq
 
 Handles the full tournament lifecycle: bracket generation, match reporting,
@@ -90,7 +92,7 @@ async def _announce_open_matches(
         gf_label = " 🏆 **GRAND FINALS** 🏆" if m.is_grand_finals else ""
         view = MatchView(ctx.bot, tournament, m)
         await ctx.send(
-            f"⚔️ <@{m.player1_id}> vs <@{m.player2_id}>!{gf_label}\n"
+            f"⚔️ <@{m.player1_id}> vs <@{m.player2_id}>!{gf_label}\\n"
             f"_{best_of_label} — Report your win with the button below or `!win <score>` (e.g. `!win 2-1`)_",
             view=view
         )
@@ -494,3 +496,6 @@ class LiveCog(commands.Cog, name="Live"):
 
 async def setup(bot: commands.Bot) -> None:
     await bot.add_cog(LiveCog(bot))
+'''
+with open('cogs/live.py', 'w', encoding='utf-8') as f:
+    f.write(code)

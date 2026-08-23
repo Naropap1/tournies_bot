@@ -61,8 +61,7 @@ def generate_bracket(tournament_id: int, entrant_ids: List[int], best_of_standar
                 winner_id=None,
                 score=None,
                 status='pending',
-                startgg_set_id=None,
-                is_grand_finals=False,
+                    is_grand_finals=False,
                 best_of=best_of
             )
             matches.append(match)
@@ -112,8 +111,7 @@ def generate_bracket(tournament_id: int, entrant_ids: List[int], best_of_standar
                 winner_id=None,
                 score=None,
                 status='pending',
-                startgg_set_id=None,
-                is_grand_finals=False,
+                    is_grand_finals=False,
                 best_of=best_of
             )
             matches.append(match)
@@ -130,7 +128,6 @@ def generate_bracket(tournament_id: int, entrant_ids: List[int], best_of_standar
         winner_id=None,
         score=None,
         status='pending',
-        startgg_set_id=None,
         is_grand_finals=True,
         best_of=best_of_finals
     )

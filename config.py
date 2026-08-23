@@ -12,7 +12,6 @@ load_dotenv(Path(__file__).parent / ".env")
 
 # --- Secrets ---
 DISCORD_TOKEN: str = os.getenv("DISCORD_TOKEN", "")
-STARTGG_TOKEN: str = os.getenv("STARTGG_TOKEN", "")
 
 # --- Bot Settings ---
 COMMAND_PREFIX: str = "!"
@@ -22,9 +21,6 @@ BOT_DESCRIPTION: str = "Tournies Bot — Automated tournament scheduling & brack
 DB_PATH: str = str(Path(__file__).parent / "tournies.db")
 
 # --- Start.gg API ---
-STARTGG_API_URL: str = "https://api.start.gg/gql/alpha"
-STARTGG_RATE_LIMIT: int = 80   # max requests per 60 seconds
-STARTGG_RATE_WINDOW: int = 60  # seconds
 
 # --- Tournament Defaults ---
 DEFAULT_FREQUENCY: str = "monthly"

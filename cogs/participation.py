@@ -1,5 +1,5 @@
 """
-Participation Cog — !link, !join, !leave, !drop
+Participation Cog — !join, !leave, !drop
 
 Handles player account linking, tournament signup, and mid-tournament forfeits.
 """
@@ -16,46 +16,10 @@ logger = logging.getLogger(__name__)
 
 
 class ParticipationCog(commands.Cog, name="Participation"):
-    """Commands for managing tournament signups and account linking."""
+    """Commands for managing tournament signups."""
 
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
-
-    @commands.command(name="link")
-    async def link_account(self, ctx: commands.Context, startgg_tag: str) -> None:
-        """
-        Link your Discord account to your Start.gg profile.
-
-        Usage: !link {start.gg_tag}
-        Example: !link MkLeo
-        """
-        # Attempt to validate the tag via Start.gg API
-        try:
-            user_data = await self.bot.startgg.resolve_user(startgg_tag)
-            if user_data:
-                display_name = user_data.get("name") or user_data.get("player", {}).get("gamerTag", startgg_tag)
-                await self.bot.db.link_account(ctx.author.id, startgg_tag, ctx.guild.id)
-                embed = discord.Embed(
-                    title="🔗 Account Linked!",
-                    description=f"Your Discord is now linked to Start.gg profile: **{display_name}** (`{startgg_tag}`)",
-                    color=discord.Color.green(),
-                )
-                await ctx.send(embed=embed)
-                logger.info("Linked %s -> Start.gg:%s", ctx.author, startgg_tag)
-            else:
-                # Tag not found on Start.gg, but still save it locally
-                await self.bot.db.link_account(ctx.author.id, startgg_tag, ctx.guild.id)
-                await ctx.send(
-                    f"⚠️ Could not verify `{startgg_tag}` on Start.gg, but saved it locally. "
-                    f"Double-check the tag spelling."
-                )
-        except Exception as e:
-            # API might be down or token missing — save locally anyway
-            await self.bot.db.link_account(ctx.author.id, startgg_tag, ctx.guild.id)
-            await ctx.send(
-                f"⚠️ Start.gg verification failed ({type(e).__name__}), but your tag `{startgg_tag}` has been saved locally."
-            )
-            logger.warning("Start.gg resolve_user failed for %s: %s", startgg_tag, e)
 
     @commands.command(name="join")
     async def join_tournament(self, ctx: commands.Context, *, game: str) -> None:
@@ -80,18 +44,10 @@ class ParticipationCog(commands.Cog, name="Participation"):
                 return
             await ctx.send(f"ℹ️ You're already signed up for the **{game}** tournament!")
             return
-
-        # Check for linked account
-        linked = await self.bot.db.get_linked_account(ctx.author.id, ctx.guild.id)
-        is_phantom = linked is None
-        startgg_tag = linked.startgg_tag if linked else None
-
         entrant = Entrant(
             tournament_id=tournament.id,
             discord_id=ctx.author.id,
-            is_phantom=is_phantom,
             joined_at=datetime.now(),
-            startgg_tag=startgg_tag,
         )
         await self.bot.db.insert_entrant(entrant)
 
@@ -99,15 +55,11 @@ class ParticipationCog(commands.Cog, name="Participation"):
         entrants = await self.bot.db.get_entrants(tournament.id)
         roster_count = len(entrants)
 
-        phantom_note = ""
-        if is_phantom:
-            phantom_note = "\n_💡 Tip: Use `!link {tag}` to connect your Start.gg profile._"
-
         embed = discord.Embed(
             title=f"✅ Joined: {game}",
             description=(
                 f"{ctx.author.mention} has signed up for the **{game}** tournament!\n"
-                f"**Roster:** {roster_count} player(s){phantom_note}"
+                f"**Roster:** {roster_count} player(s)"
             ),
             color=discord.Color.green(),
         )
