@@ -89,7 +89,7 @@ def generate_bracket(tournament_id: int, entrant_ids: List[int], best_of_standar
         if lr == 1:
             num_matches = bracket_size // 4
         else:
-            i = (lr + 2) // 2
+            i = (lr + 3) // 2
             num_matches = bracket_size // (2 ** i)
         
         losers_matches_by_round[-lr] = []
@@ -193,19 +193,25 @@ def generate_bracket(tournament_id: int, entrant_ids: List[int], best_of_standar
     
     # Propagate byes — mark losers bracket slots receiving a 'no loser' as BYE_SENTINEL
     changed = True
+    propagated_byes = set()
     while changed:
         changed = False
         for match in state.matches:
-            if match.status == 'bye' and match.winner_id is not None:
-                route = state.routes[(match.round_num, match.match_number)]
+            m_key = (match.round_num, match.match_number)
+            if match.status == 'bye' and m_key not in propagated_byes:
+                propagated_byes.add(m_key)
+                
+                route = state.routes[m_key]
                 # Forward winner to next match
                 if route.winner_to:
                     next_match = _get_match(state.matches, route.winner_to[0], route.winner_to[1])
+                    win_forward = match.winner_id if match.winner_id is not None else _BYE_SENTINEL
+                    
                     if route.winner_slot == 1 and next_match.player1_id is None:
-                        next_match.player1_id = match.winner_id
+                        next_match.player1_id = win_forward
                         changed = True
                     elif route.winner_slot == 2 and next_match.player2_id is None:
-                        next_match.player2_id = match.winner_id
+                        next_match.player2_id = win_forward
                         changed = True
 
                 # Forward BYE sentinel to losers bracket (no actual loser exists)
@@ -217,8 +223,6 @@ def generate_bracket(tournament_id: int, entrant_ids: List[int], best_of_standar
                     elif route.loser_slot == 2 and next_loser_match.player2_id is None:
                         next_loser_match.player2_id = _BYE_SENTINEL
                         changed = True
-
-                match.status = 'complete'
 
         # Auto-advance matches where one side is BYE_SENTINEL and the other has a real player
         for match in state.matches:
