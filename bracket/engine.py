@@ -47,6 +47,34 @@ def _generate_standard_seeding(bracket_size: int) -> list[int]:
 def _next_power_of_2(x: int) -> int:
     return 1 if x == 0 else 2**(x - 1).bit_length()
 
+
+_MINOR_ORDERINGS = {
+    4: ['natural', 'reverse'],
+    8: ['natural', 'reverse', 'natural'],
+    16: ['natural', 'reverse_half_shift', 'reverse', 'natural'],
+    32: ['natural', 'reverse', 'half_shift', 'natural', 'natural'],
+    64: ['natural', 'reverse', 'half_shift', 'reverse', 'natural', 'natural'],
+    128: ['natural', 'reverse', 'half_shift', 'pair_flip', 'pair_flip', 'pair_flip', 'natural'],
+}
+
+def _apply_ordering(array, method):
+    if method == 'natural':
+        return list(array)
+    elif method == 'reverse':
+        return list(reversed(array))
+    elif method == 'half_shift':
+        half = len(array) // 2
+        return array[half:] + array[:half]
+    elif method == 'reverse_half_shift':
+        half = len(array) // 2
+        return list(reversed(array[:half])) + list(reversed(array[half:]))
+    elif method == 'pair_flip':
+        res = []
+        for i in range(0, len(array), 2):
+            res.extend([array[i+1], array[i]])
+        return res
+    return list(array)
+
 def generate_bracket(tournament_id: int, entrant_ids: List[int], best_of_standard: int = 3, best_of_finals: int = 5) -> BracketState:
     num_players = len(entrant_ids)
     bracket_size = _next_power_of_2(max(2, num_players))
@@ -184,12 +212,13 @@ def generate_bracket(tournament_id: int, entrant_ids: List[int], best_of_standar
                     lr = -(2 * r - 2)
                     total_m = len(winners_matches_by_round[r])
                     
-                    # Alternate crossovers to mathematically prevent rematches in deep brackets
-                    # r=2: cross, r=3: straight, r=4: cross, r=5: straight...
-                    if r % 2 == 0:
-                        next_m = total_m - m + 1
-                    else:
-                        next_m = m
+                    # Use standard industry minor orderings to mathematically prevent rematches in deep brackets
+                    orderings = _MINOR_ORDERINGS.get(bracket_size, [])
+                    method = orderings[r - 1] if r - 1 < len(orderings) else ('reverse' if r % 2 == 0 else 'natural')
+                    
+                    array = list(range(1, total_m + 1))
+                    mapped_array = _apply_ordering(array, method)
+                    next_m = mapped_array[m - 1]
                         
                     route.loser_to = (lr, next_m)
                     route.loser_slot = 2
