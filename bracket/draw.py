@@ -98,8 +98,8 @@ def generate_bracket_image(bracket_state, names_map=None) -> discord.File:
                             draw.line([(px, py), (px + x_spacing/2, py), (px + x_spacing/2, cy), (cx, cy)], fill=(200, 200, 200), width=2)
                             
     # Draw Losers Bracket
-    l_y_offset = y_offset + w_h + 100
-    draw.text((20, l_y_offset - 60), "Losers Bracket", fill=(200, 100, 100), font=title_font)
+    l_y_offset = y_offset + w_h + 120
+    draw.text((20, l_y_offset - 80), "Losers Bracket", fill=(200, 100, 100), font=title_font)
     
     for i, r in enumerate(losers_rounds):
         matches = sorted(rounds[r], key=lambda x: x.match_number)
@@ -191,9 +191,9 @@ def _draw_match_box(draw, x, y, w, h, match, font, is_gf=False, names_map=None):
     p2 = names_map.get(match.player2_id, str(match.player2_id)) if match.player2_id else "TBD"
     
     if match.winner_id == match.player1_id:
-        p1 = f"{p1} 👑"
+        p1 = f"{p1} [W]"
     elif match.winner_id == match.player2_id:
-        p2 = f"{p2} 👑"
+        p2 = f"{p2} [W]"
         
     p1_color = (255,255,255) if match.winner_id == match.player1_id or not match.winner_id else (150,150,150)
     p2_color = (255,255,255) if match.winner_id == match.player2_id or not match.winner_id else (150,150,150)
@@ -202,5 +202,5 @@ def _draw_match_box(draw, x, y, w, h, match, font, is_gf=False, names_map=None):
     draw.line([x, y + h/2, x + w, y + h/2], fill=(80, 80, 80), width=1)
     draw.text((x + 10, y + h/2 + 5), p2, fill=p2_color, font=font)
     
-    if match.score:
+    if match.score and match.score != "W":
         draw.text((x + w - 40, y + h/2 - 10), match.score, fill=(200, 200, 200), font=font)
