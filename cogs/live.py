@@ -1,4 +1,5 @@
 import logging
+import random
 from datetime import datetime
 from io import BytesIO
 import json
@@ -100,6 +101,9 @@ class LiveCog(commands.Cog, name="Live Bracket"):
         await self.bot.db.update_tournament(tournament.id, status="live", version=1)
 
         entrant_ids = [e.discord_id for e in entrants]
+        # Randomly shuffle entrants to generate random seeds, as per standard defaults
+        random.shuffle(entrant_ids)
+        
         state = generate_bracket(tournament.id, entrant_ids)
         await self.bot.db.insert_matches(state.matches)
 
