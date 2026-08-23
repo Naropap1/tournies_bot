@@ -8,7 +8,7 @@ Runs as a discord.ext.tasks loop checking for:
 """
 
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import discord
 from discord.ext import commands, tasks
@@ -55,7 +55,7 @@ class AlertsCog(commands.Cog, name="Alerts"):
 
     async def _process_alerts(self) -> None:
         """Check all guilds for upcoming tournaments needing alerts or cleanup."""
-        now = datetime.now()
+        now = datetime.now(timezone.utc)
 
         for guild in self.bot.guilds:
             tournaments = await self.bot.db.get_upcoming_tournaments(guild.id)

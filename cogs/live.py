@@ -72,8 +72,8 @@ class LiveCog(commands.Cog, name="Live Bracket"):
 
         desc = ""
         for m in open_matches:
-            p1 = f"<@{m.player1_id}>" if m.player1_id > 1000 else f"@User{m.player1_id}"
-            p2 = f"<@{m.player2_id}>" if m.player2_id > 1000 else f"@User{m.player2_id}"
+            p1 = f"<@{m.player1_id}>" if m.player1_id > 1000 else f"@{m.player1_id}"
+            p2 = f"<@{m.player2_id}>" if m.player2_id > 1000 else f"@{m.player2_id}"
             title = f"Round {m.round_num}" if m.round_num > 0 else (f"Grand Finals" if m.round_num == 0 else f"Losers Round {abs(m.round_num)}")
             desc += f"**{title} (Match {m.match_number})**\n{p1} vs {p2}\n\n"
         
@@ -140,8 +140,8 @@ class LiveCog(commands.Cog, name="Live Bracket"):
         
         if parts:
             last_part = parts[-1]
-            if last_part.lower().startswith('@user') and last_part[5:].isdigit():
-                winner_id = int(last_part[5:])
+            if last_part.startswith('@') and last_part[1:].isdigit():
+                winner_id = int(last_part[1:])
                 game = " ".join(parts[:-1])
             elif last_part.isdigit() and len(last_part) < 17:
                 winner_id = int(last_part)
@@ -198,8 +198,8 @@ class LiveCog(commands.Cog, name="Live Bracket"):
 
         loser_id = match.player1_id if match.player2_id == winner_id else match.player2_id
         
-        w_ping = f"<@{winner_id}>" if winner_id > 1000 else f"@User{winner_id}"
-        l_ping = f"<@{loser_id}>" if loser_id > 1000 else f"@User{loser_id}"
+        w_ping = f"<@{winner_id}>" if winner_id > 1000 else f"@{winner_id}"
+        l_ping = f"<@{loser_id}>" if loser_id > 1000 else f"@{loser_id}"
         await ctx.send(f"✅ **[{game}]** {w_ping} defeated {l_ping}!")
         
         image_file = self._get_bracket_image(ctx.guild, state)
@@ -271,8 +271,8 @@ class LiveCog(commands.Cog, name="Live Bracket"):
         player_id = None
         game = " ".join(parts[:-1])
         
-        if last_part.lower().startswith('@user') and last_part[5:].isdigit():
-            player_id = int(last_part[5:])
+        if last_part.startswith('@') and last_part[1:].isdigit():
+            player_id = int(last_part[1:])
         elif last_part.isdigit() and len(last_part) < 17:
             player_id = int(last_part)
         elif last_part.startswith('<@') and last_part.endswith('>'):
@@ -325,8 +325,8 @@ class LiveCog(commands.Cog, name="Live Bracket"):
         await self.bot.db.delete_matches(tournament.id)
         await self.bot.db.insert_matches(state.matches)
 
-        p_ping = f"@User{player_id}" if player_id < 1000 else f"<@{player_id}>"
-        w_ping = f"@User{winner_id}" if winner_id < 1000 else f"<@{winner_id}>"
+        p_ping = f"@{player_id}" if player_id < 1000 else f"<@{player_id}>"
+        w_ping = f"@{winner_id}" if winner_id < 1000 else f"<@{winner_id}>"
         await ctx.send(f"🚨 **[{game}]** {p_ping} has been disqualified. {w_ping} advances.")
         
         if is_bracket_complete(state):
@@ -342,7 +342,7 @@ class LiveCog(commands.Cog, name="Live Bracket"):
         winner_id = get_winner(state)
         await self.bot.db.update_tournament(tournament.id, status="completed")
         
-        w_ping = f"<@{winner_id}>" if winner_id > 1000 else f"@User{winner_id}"
+        w_ping = f"<@{winner_id}>" if winner_id > 1000 else f"@{winner_id}"
         
         # Insert Champion
         from db.models import Champion

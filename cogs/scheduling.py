@@ -176,8 +176,8 @@ class SchedulingCog(commands.Cog, name="Scheduling"):
         member_id = None
         game = " ".join(parts[:-1])
         
-        if last_part.lower().startswith('@user') and last_part[5:].isdigit():
-            member_id = int(last_part[5:])
+        if last_part.startswith('@') and last_part[1:].isdigit():
+            member_id = int(last_part[1:])
         elif last_part.isdigit() and len(last_part) < 17:
             member_id = int(last_part)
         elif last_part.startswith('<@') and last_part.endswith('>'):
@@ -209,7 +209,7 @@ class SchedulingCog(commands.Cog, name="Scheduling"):
         await self.bot.db.add_owner(tournament.id, member_id)
         
         # Display nicely for dummy vs real users
-        mention = f"@User{member_id}" if member_id < 1000 else f"<@{member_id}>"
+        mention = f"@{member_id}" if member_id < 1000 else f"<@{member_id}>"
         await ctx.send(f"✅ {mention} has been added as a co-owner for `{game}`!")
 
     @commands.command(name="rules")
