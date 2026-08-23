@@ -38,12 +38,17 @@ A fully functional, native Discord tournament bot tailored for community hubs. T
    ```
 
 4. **Invite the Bot to Discord**:
-   - Still in the [Discord Developer Portal](https://discord.com/developers/applications) for your bot application, go to the **Bot** tab.
-   - Scroll down and enable the **Message Content Intent** and **Server Members Intent**.
-   - Go to **OAuth2 > URL Generator**.
-   - Select scopes: `bot`.
-   - Select bot permissions: `Read Messages/View Channels`, `Send Messages`, `Embed Links`.
-   - Copy the generated URL at the bottom and paste it into your browser to invite the bot to your server!
+   - Still in the [Discord Developer Portal](https://discord.com/developers/applications) for your bot application, navigate to the **Bot** tab on the left sidebar.
+   - Scroll down to the **Privileged Gateway Intents** section and toggle ON the **Message Content Intent** and **Server Members Intent**, then save your changes. (The bot needs these to read commands like `!join` and see user profiles).
+   - Now navigate to the **OAuth2 > URL Generator** tab on the left sidebar.
+   - Under **Scopes**, check the box for `bot`.
+   - A new **Bot Permissions** grid will appear below. Check the boxes for: 
+     - `Read Messages/View Channels`
+     - `Send Messages`
+     - `Embed Links`
+     - `Attach Files` *(CRITICAL: Required to post the bracket images!)*
+     - `Read Message History`
+   - Scroll down to the very bottom, copy the **Generated URL**, and paste it into a new browser tab to invite the bot to your server!
 
 5. **Run the Bot**:
    ```powershell
@@ -53,22 +58,24 @@ A fully functional, native Discord tournament bot tailored for community hubs. T
 
 ## Commands
 
-### Scheduling (!create, !move, !upcoming)
-- !create {game} {date} {time} [frequency]: Schedule a new tournament (frequencies: monthly, quarterly, bi-annually, annually).
+### Scheduling (!create, !move, !upcoming, !co_owner)
+- !create {game} {date} {time} [frequency] [rules...]: Schedule a new tournament (Times are EST).
 - !move {game} {date} {time}: Reschedule a tournament.
+- !co_owner {game} @User: Grant admin permissions for an event.
 - !upcoming: View all scheduled and live events.
 
-### Participation (!join, !leave, !drop)
+### Participation (!join, !leave, !drop, !rules)
 - !join {game}: Sign up for the next tournament.
 - !leave {game}: Remove yourself from a scheduled tournament.
+- !rules {game}: Read the custom rules for the event.
 - !drop: Forfeit remaining matches in a live tournament.
 
-### Live Execution (!start, !bracket, !win, !dq)
+### Live Execution (!start, !bracket, !win, !dq, !revert)
 - !start {game}: Lock the roster and generate the bracket.
-- !bracket {game}: Display the current bracket.
-- !win {score}: Report a match victory (e.g., !win 2-1).
-- !dq @Player: Disqualify a player (creator only).
-- Matches will also display interactive buttons for score reporting and forfeiting.
+- !bracket {game}: Display the current bracket image.
+- !win {game} {score}: Report a match victory (e.g., !win Smash 2-1).
+- !dq {game} @Player: Disqualify a player (admin only).
+- !revert {game} {state_id}: Roll back the bracket to a previous state if a score was misreported.
 
 ### Testing
 - !test_tourney [game]: Automatically create and start a dummy tournament with 5 players (admin only).
