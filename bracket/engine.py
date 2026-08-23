@@ -27,6 +27,23 @@ class BracketState:
     matches: List[Match]
     routes: Dict[Tuple[int, int], BracketRoute]  # keyed by (round_num, match_number)
 
+
+def _generate_standard_seeding(bracket_size: int) -> list[int]:
+    '''Generates standard power-of-2 tournament seeding (e.g. 1v8, 4v5, 2v7, 3v6).'''
+    if bracket_size < 2:
+        return [1]
+    seeding = [1, 2]
+    current_size = 2
+    while current_size < bracket_size:
+        next_size = current_size * 2
+        next_seeding = []
+        for seed in seeding:
+            next_seeding.append(seed)
+            next_seeding.append(next_size - seed + 1)
+        seeding = next_seeding
+        current_size = next_size
+    return seeding
+
 def _next_power_of_2(x: int) -> int:
     return 1 if x == 0 else 2**(x - 1).bit_length()
 
@@ -35,9 +52,13 @@ def generate_bracket(tournament_id: int, entrant_ids: List[int], best_of_standar
     bracket_size = _next_power_of_2(max(2, num_players))
     k = int(math.log2(bracket_size))
     
-    padded_entrants = entrant_ids.copy()
-    while len(padded_entrants) < bracket_size:
-        padded_entrants.append(None)
+    seeding_order = _generate_standard_seeding(bracket_size)
+    padded_entrants = []
+    for seed in seeding_order:
+        if seed <= num_players:
+            padded_entrants.append(entrant_ids[seed - 1])
+        else:
+            padded_entrants.append(None)
         
     matches = []
     routes = {}
