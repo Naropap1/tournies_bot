@@ -163,9 +163,10 @@ def generate_bracket_image(bracket_state, names_map=None) -> discord.File:
                         draw.line([(px, py), (px + x_spacing/2, py), (px + x_spacing/2, y_center+10), (x, y_center+10)], fill=(255, 215, 0), width=3)
 
     # Crop image to fit contents
-    bbox = img.getbbox()
-    if bbox:
-        img = img.crop((0, 0, bbox[2] + 50, bbox[3] + 50))
+    if match_coords:
+        max_x = max(coord[0] for coord in match_coords.values()) + box_w + 50
+        max_y = max(coord[1] for coord in match_coords.values()) + box_h + 50
+        img = img.crop((0, 0, int(max_x), int(max_y)))
 
     buf = BytesIO()
     img.save(buf, format='PNG')
