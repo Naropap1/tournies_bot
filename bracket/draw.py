@@ -31,8 +31,8 @@ def generate_bracket_image(bracket_state, names_map=None) -> discord.File:
     l_depth = len(losers_rounds)
     
     # We will draw Winners Bracket on top, Losers below
-    w_max_matches = len(rounds.get(1, [])) if winners_rounds else 0
-    l_max_matches = len(rounds.get(-1, [])) if losers_rounds else 0
+    w_max_matches = max([len(rounds[r]) for r in winners_rounds]) if winners_rounds else 0
+    l_max_matches = max([len(rounds[r]) for r in losers_rounds]) if losers_rounds else 0
     
     total_w = max(w_depth + 1, l_depth + 1) * (box_w + x_spacing) + 100
     
@@ -187,8 +187,14 @@ def _draw_match_box(draw, x, y, w, h, match, font, is_gf=False, names_map=None):
         
     draw.rectangle([x, y, x+w, y+h], fill=fill_color, outline=outline_color, width=2)
     
-    p1 = names_map.get(match.player1_id, str(match.player1_id)) if match.player1_id else "TBD"
-    p2 = names_map.get(match.player2_id, str(match.player2_id)) if match.player2_id else "TBD"
+    
+    def _format_player(pid):
+        if not pid: return "TBD"
+        if pid == -1: return "BYE"
+        return names_map.get(pid, str(pid))
+        
+    p1 = _format_player(match.player1_id)
+    p2 = _format_player(match.player2_id)
     
     if match.winner_id is not None:
         if match.winner_id == match.player1_id:
