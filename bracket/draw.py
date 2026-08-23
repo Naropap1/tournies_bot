@@ -17,8 +17,10 @@ def generate_bracket_image(bracket_state, names_map=None) -> discord.File:
             continue
         rounds.setdefault(m.round_num, []).append(m)
 
-    winners_rounds = sorted([r for r in rounds.keys() if r > 0])
-    losers_rounds = sorted([r for r in rounds.keys() if r < 0], reverse=True)
+    max_w_round = max([m.round_num for m in bracket_state.matches if m.round_num > 0], default=0)
+    max_l_round = min([m.round_num for m in bracket_state.matches if m.round_num < 0], default=0)
+    winners_rounds = list(range(1, max_w_round + 1))
+    losers_rounds = list(range(-1, max_l_round - 1, -1))
     
     # Calculate dimensions
     box_w = 200
@@ -31,10 +33,11 @@ def generate_bracket_image(bracket_state, names_map=None) -> discord.File:
     l_depth = len(losers_rounds)
     
     # We will draw Winners Bracket on top, Losers below
-    w_max_matches = max([len(rounds[r]) for r in winners_rounds]) if winners_rounds else 0
-    l_max_matches = max([len(rounds[r]) for r in losers_rounds]) if losers_rounds else 0
+    w_max_matches = max([len(rounds.get(r, [])) for r in winners_rounds]) if winners_rounds else 0
+    l_max_matches = max([len(rounds.get(r, [])) for r in losers_rounds]) if losers_rounds else 0
     
-    total_w = max(w_depth + 1, l_depth + 1) * (box_w + x_spacing) + 100
+    gf_count = len(rounds.get(0, []))
+    total_w = (max(w_depth, l_depth) + max(1, gf_count) + 1) * (box_w + x_spacing) + 100
     
     w_h = w_max_matches * (box_h + y_spacing) * 2
     l_h = l_max_matches * (box_h + y_spacing) * 2
@@ -58,7 +61,7 @@ def generate_bracket_image(bracket_state, names_map=None) -> discord.File:
     # Draw Winners Bracket
     y_offset = 100
     for i, r in enumerate(winners_rounds):
-        matches = sorted(rounds[r], key=lambda x: x.match_number)
+        matches = sorted(rounds.get(r, []), key=lambda x: x.match_number)
         x = 50 + i * (box_w + x_spacing)
         
         # Calculate Y positions. 
@@ -69,7 +72,7 @@ def generate_bracket_image(bracket_state, names_map=None) -> discord.File:
                 y_center = y_offset + m_idx * (box_h + y_spacing) * 2
             else:
                 feeders = []
-                for prev_m in rounds[winners_rounds[i-1]]:
+                for prev_m in rounds.get(winners_rounds[i-1], []):
                     route = bracket_state.routes.get((prev_m.round_num, prev_m.match_number))
                     if route and route.winner_to == (match.round_num, match.match_number):
                         coord = match_coords.get((prev_m.round_num, prev_m.match_number))
@@ -87,7 +90,7 @@ def generate_bracket_image(bracket_state, names_map=None) -> discord.File:
             
             # Draw connecting lines from feeders
             if i > 0:
-                for prev_m in rounds[winners_rounds[i-1]]:
+                for prev_m in rounds.get(winners_rounds[i-1], []):
                     route = bracket_state.routes.get((prev_m.round_num, prev_m.match_number))
                     if route and route.winner_to == (match.round_num, match.match_number):
                         prev_coord = match_coords.get((prev_m.round_num, prev_m.match_number))
@@ -102,7 +105,7 @@ def generate_bracket_image(bracket_state, names_map=None) -> discord.File:
     draw.text((20, l_y_offset - 80), "Losers Bracket", fill=(200, 100, 100), font=title_font)
     
     for i, r in enumerate(losers_rounds):
-        matches = sorted(rounds[r], key=lambda x: x.match_number)
+        matches = sorted(rounds.get(r, []), key=lambda x: x.match_number)
         x = 50 + i * (box_w + x_spacing)
         
         for m_idx, match in enumerate(matches):
@@ -110,7 +113,7 @@ def generate_bracket_image(bracket_state, names_map=None) -> discord.File:
                 y_center = l_y_offset + m_idx * (box_h + y_spacing) * 1.5
             else:
                 feeders = []
-                for prev_m in rounds[losers_rounds[i-1]]:
+                for prev_m in rounds.get(losers_rounds[i-1], []):
                     route = bracket_state.routes.get((prev_m.round_num, prev_m.match_number))
                     if route and route.winner_to == (match.round_num, match.match_number):
                         coord = match_coords.get((prev_m.round_num, prev_m.match_number))
@@ -127,7 +130,7 @@ def generate_bracket_image(bracket_state, names_map=None) -> discord.File:
             _draw_match_box(draw, x, y_center - box_h/2, box_w, box_h, match, font, False, names_map)
             
             if i > 0:
-                for prev_m in rounds[losers_rounds[i-1]]:
+                for prev_m in rounds.get(losers_rounds[i-1], []):
                     route = bracket_state.routes.get((prev_m.round_num, prev_m.match_number))
                     if route and route.winner_to == (match.round_num, match.match_number):
                         prev_coord = match_coords.get((prev_m.round_num, prev_m.match_number))
@@ -143,24 +146,31 @@ def generate_bracket_image(bracket_state, names_map=None) -> discord.File:
         y_center = y_offset + (w_h / 2)
         
         for idx, match in enumerate(gf_matches):
-            _draw_match_box(draw, x, y_center - box_h/2, box_w, box_h, match, font, True, names_map)
-            match_coords[(match.round_num, match.match_number)] = (x, y_center)
+            current_x = x + idx * (box_w + x_spacing)
+            _draw_match_box(draw, current_x, y_center - box_h/2, box_w, box_h, match, font, True, names_map)
+            match_coords[(match.round_num, match.match_number)] = (current_x, y_center)
             
             if idx == 0:
                 # Line from WF
                 if winners_rounds:
-                    wf = rounds[winners_rounds[-1]][0]
-                    wf_coord = match_coords.get((wf.round_num, wf.match_number))
+                    wf = rounds.get(winners_rounds[-1], [])[0] if rounds.get(winners_rounds[-1]) else None
+                    wf_coord = match_coords.get((wf.round_num, wf.match_number)) if wf else None
                     if wf_coord:
                         px, py = wf_coord[0] + box_w, wf_coord[1]
                         draw.line([(px, py), (px + x_spacing/2, py), (px + x_spacing/2, y_center-10), (x, y_center-10)], fill=(255, 215, 0), width=3)
                 # Line from LF
                 if losers_rounds:
-                    lf = rounds[losers_rounds[-1]][0]
-                    lf_coord = match_coords.get((lf.round_num, lf.match_number))
+                    lf = rounds.get(losers_rounds[-1], [])[0] if rounds.get(losers_rounds[-1]) else None
+                    lf_coord = match_coords.get((lf.round_num, lf.match_number)) if lf else None
                     if lf_coord:
                         px, py = lf_coord[0] + box_w, lf_coord[1]
                         draw.line([(px, py), (px + x_spacing/2, py), (px + x_spacing/2, y_center+10), (x, y_center+10)], fill=(255, 215, 0), width=3)
+            else:
+                # Line from GF1 to GF2
+                prev_gf = match_coords.get((0, match.match_number - 1))
+                if prev_gf:
+                    px, py = prev_gf[0] + box_w, prev_gf[1]
+                    draw.line([(px, py), (current_x, y_center)], fill=(255, 215, 0), width=3)
 
     # Crop image to fit contents
     if match_coords:
