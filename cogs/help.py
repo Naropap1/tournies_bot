@@ -38,8 +38,8 @@ class HelpCog(commands.Cog, name="Help"):
             color=discord.Color.blue(),
         )
         embed.add_field(
-            name="🛠️ `!help setup`",
-            value="How to set up the Discord channels and schedule your first tournament.",
+            name="📅 `!help schedule`",
+            value="How to schedule and manage your tournaments (!create, !move, !upcoming).",
             inline=False,
         )
         embed.add_field(
@@ -60,24 +60,16 @@ class HelpCog(commands.Cog, name="Help"):
         embed.set_footer(text="Type !help <category> (e.g. !help startgg) to read a guide.")
         await ctx.send(embed=embed)
 
-    @custom_help.command(name="setup")
-    async def help_setup(self, ctx: commands.Context) -> None:
-        """Guide on server setup and scheduling."""
+    @custom_help.command(name="schedule")
+    async def help_schedule(self, ctx: commands.Context) -> None:
+        """Guide on scheduling tournaments."""
         embed = discord.Embed(
-            title="🛠️ Guide: Server Setup & Scheduling",
+            title="📅 Guide: Scheduling Tournaments",
+            description="Use these commands to create and manage future events.",
             color=discord.Color.green(),
         )
         embed.add_field(
-            name="1. Discord Channel Setup",
-            value=(
-                "Create a dedicated channel named `#tournaments` in your server. "
-                "Ensure the bot has permissions to **View Channel**, **Send Messages**, and **Embed Links** in this channel. "
-                "Players should use all bot commands inside this channel to keep things organized."
-            ),
-            inline=False,
-        )
-        embed.add_field(
-            name="2. Scheduling a Tournament",
+            name="1. Scheduling a Tournament",
             value=(
                 "Use the `!create` command to schedule an event. The bot understands flexible dates and times.\n"
                 "**Usage:** `!create {game} {date} {time} [frequency]`\n"
@@ -87,10 +79,18 @@ class HelpCog(commands.Cog, name="Help"):
             inline=False,
         )
         embed.add_field(
-            name="3. Rescheduling & Viewing",
+            name="2. Rescheduling (`!move`)",
             value=(
-                "Made a mistake? The creator can use `!move {game} {date} {time}` to change the date.\n"
-                "Use `!upcoming` anytime to see all scheduled events and who has signed up so far."
+                "Made a mistake? The creator can use `!move` to change the date.\n"
+                "**Usage:** `!move {game} {date} {time}`\n"
+                "**Example:** `!move Smash 2026-11-01 8PM`"
+            ),
+            inline=False,
+        )
+        embed.add_field(
+            name="3. Viewing the Schedule (`!upcoming`)",
+            value=(
+                "Use `!upcoming` anytime to see all scheduled events, their dates, and who has signed up so far."
             ),
             inline=False,
         )

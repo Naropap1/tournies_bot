@@ -28,7 +28,16 @@ A fully functional, native Discord tournament bot tailored for community hubs. T
    DISCORD_TOKEN=your_discord_bot_token_here
    STARTGG_TOKEN=your_startgg_api_token_here
    ```
-4. **Run the Bot**:
+4. **Invite the Bot to Discord**:
+   - Go to the [Discord Developer Portal](https://discord.com/developers/applications).
+   - Create a New Application and go to the **Bot** tab to get your token (put this in `.env`).
+   - Scroll down and enable the **Message Content Intent** and **Server Members Intent**.
+   - Go to **OAuth2 > URL Generator**.
+   - Select scopes: `bot`.
+   - Select bot permissions: `Read Messages/View Channels`, `Send Messages`, `Embed Links`.
+   - Copy the generated URL at the bottom and paste it into your browser to invite the bot to your server!
+
+5. **Run the Bot**:
    ```powershell
    python bot.py
    ```
