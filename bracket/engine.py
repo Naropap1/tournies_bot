@@ -182,7 +182,15 @@ def generate_bracket(tournament_id: int, entrant_ids: List[int], best_of_standar
                     route.loser_slot = 1 if m % 2 != 0 else 2
                 else:
                     lr = -(2 * r - 2)
-                    next_m = m
+                    total_m = len(winners_matches_by_round[r])
+                    
+                    # Alternate crossovers to mathematically prevent rematches in deep brackets
+                    # r=2: cross, r=3: straight, r=4: cross, r=5: straight...
+                    if r % 2 == 0:
+                        next_m = total_m - m + 1
+                    else:
+                        next_m = m
+                        
                     route.loser_to = (lr, next_m)
                     route.loser_slot = 2
 
