@@ -396,5 +396,36 @@ class LiveCog(commands.Cog, name="Live Bracket"):
         image_file = self._get_bracket_image(ctx.guild, state)
         await channel.send(content=f"**[{tournament.game}] Final Bracket:**", file=image_file)
 
+
+    @commands.command(name="ping")
+    @commands.has_permissions(administrator=True)
+    async def ping_matches(self, ctx: commands.Context, *, game: str) -> None:
+        '''Ping all players in open matches.'''
+        tournament = await self.bot.db.get_tournament_by_game(ctx.guild.id, game, "live")
+        if not tournament:
+            await ctx.send(f"❌ No live tournament found for {game}.")
+            return
+            
+        matches = await self.bot.db.get_matches(tournament.id)
+        entrants = await self.bot.db.get_entrants(tournament.id)
+        state = generate_bracket(tournament.id, [e.discord_id for e in entrants])
+        state.matches = matches
+        
+        open_matches = get_open_matches(state)
+        if not open_matches:
+            await ctx.send(f"❌ No open matches currently in {game}.")
+            return
+            
+        pings = set()
+        for m in open_matches:
+            if m.player1_id: pings.add(m.player1_id)
+            if m.player2_id: pings.add(m.player2_id)
+            
+        if not pings:
+            return
+            
+        ping_str = " ".join([f"<@{p}>" for p in pings])
+        await ctx.send(f"🔔 **[{game}]** Your matches are ready to be played! Please report the winner using !win {game} @winner\n{ping_str}")
+
 async def setup(bot: commands.Bot) -> None:
     await bot.add_cog(LiveCog(bot))
