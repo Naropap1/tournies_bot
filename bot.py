@@ -56,6 +56,7 @@ class TourniesBot(commands.Bot):
 
         # Load all cogs
         cog_names = [
+            "cogs.help",
             "cogs.scheduling",
             "cogs.participation",
             "cogs.live",
