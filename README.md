@@ -1,6 +1,8 @@
 ﻿# Tournies Bot
 
-A fully functional, native Discord tournament bot tailored for community hubs. This bot handles scheduling, bracket generation (double-elimination), match progression, and prestige tracking entirely within Discord—no external websites needed!
+> **⚠️ DISCLOSURE:** This bot was largely "vibe coded" and has not been fully or rigorously tested. While it is fairly functional, it may be riddled with bugs, edge cases, and unexpected behaviors. Use at your own risk!
+
+A fully functional, native Discord tournament bot tailored for community hubs. This bot handles scheduling, bracket generation (double-elimination), match progression, and prestige tracking entirely within Discord-no external websites needed!
 
 ## Features
 
@@ -9,21 +11,21 @@ A fully functional, native Discord tournament bot tailored for community hubs. T
 - **Streamlined Match Reporting**: Simple !win commands to instantly advance through the bracket without unnecessary score tracking.
 - **Double-Elimination Bracket Engine**: Fully custom local bracket logic with BYE handling, cascading auto-advances, and Grand Finals reset integration.
 - **Recurring Schedules**: Auto-schedules the next event in a series when a tournament concludes.
-- **Robust Persistence**: Backed by a SQLite database (iosqlite) with WAL mode. Survives restarts and crashes by persisting bracket state and rebuilding in-memory maps upon reboot.
+- **Robust Persistence**: Backed by a SQLite database (aiosqlite) with WAL mode. Survives restarts and crashes by persisting bracket state and rebuilding in-memory maps upon reboot.
 - **Background Alerts**: Notifies tournament creators 1 week prior and pings channels 24 hours prior. Auto-deletes events that fail to reach the minimum entrant threshold.
 
 ## Requirements
 
 - Python 3.12+
-- Packages: discord.py, pillow, iohttp, python-dotenv, iosqlite, python-dateutil
+- Packages: discord.py, pillow, aiohttp, python-dotenv, aiosqlite, python-dateutil
 
 ## Installation & Setup
 
 1. **Clone the repository.**
 2. **Install dependencies**:
-   `powershell
+   ``powershell
    pip install -r requirements.txt
-   `
+   ``
 3. **Configure Environment Variables**:
    Open .env and fill in your DISCORD_TOKEN. Here is how to get them:
 
@@ -35,10 +37,7 @@ A fully functional, native Discord tournament bot tailored for community hubs. T
    - Paste this token into your .env file as DISCORD_TOKEN.
 
 4. **Invite the Bot to Discord**:
-   - Still in the [Discord Developer Portal](https://discord.com/developers/applications) for your bot application, navigate to the **Bot** tab on the left sidebar.
-   - Make sure the **Public Bot** toggle is checked (turned ON) to avoid default authorization link errors.
-   - Scroll down to the **Privileged Gateway Intents** section and toggle ON the **Message Content Intent** and **Server Members Intent**, then save your changes. (The bot needs these to read commands like !join and see user profiles).
-   - Now navigate to the **OAuth2 > URL Generator** tab on the left sidebar.
+   - Still in the [Discord Developer Portal](https://discord.com/developers/applications) for your bot application, navigate to the **OAuth2 > URL Generator** tab on the left sidebar.
    - Under **Scopes**, check the box for ot.
    - A new **Bot Permissions** grid will appear below. Check the boxes for: 
      - Read Messages/View Channels
@@ -47,11 +46,12 @@ A fully functional, native Discord tournament bot tailored for community hubs. T
      - Attach Files *(CRITICAL: Required to post the bracket images!)*
      - Read Message History
    - Scroll down to the very bottom, copy the **Generated URL**, and paste it into a new browser tab to invite the bot to your server!
+   - Make sure the **Message Content Intent** is enabled in the Bot tab as well.
 
 5. **Run the Bot**:
-   `powershell
+   ``powershell
    python bot.py
-   `
+   ``
    The bot will automatically initialize the database 	ournies.db on first run.
 
 ## Commands
