@@ -23,14 +23,29 @@ A fully functional, native Discord tournament bot tailored for community hubs. T
    pip install -r requirements.txt
    ```
 3. **Configure Environment Variables**:
-   Open `.env` and fill in your tokens:
+   Open `.env` and fill in your tokens. Here is how to get them:
+
+   **How to get your `DISCORD_TOKEN`**:
+   - Go to the [Discord Developer Portal](https://discord.com/developers/applications).
+   - Click **New Application** and give your bot a name.
+   - Navigate to the **Bot** tab on the left sidebar.
+   - Under the "Build-A-Bot" section, click **Reset Token** (and copy the resulting token).
+   - Paste this token into your `.env` file as `DISCORD_TOKEN`.
+
+   **How to get your `STARTGG_TOKEN`**:
+   - Log in to your account on [Start.gg](https://start.gg).
+   - Click your profile icon in the bottom left corner and select **Developer Settings**.
+   - Click **Create new token**.
+   - Give it a description (e.g., "Tournies Bot") and click **Save**.
+   - Copy the generated token and paste it into your `.env` file as `STARTGG_TOKEN`.
+
    ```env
    DISCORD_TOKEN=your_discord_bot_token_here
    STARTGG_TOKEN=your_startgg_api_token_here
    ```
+
 4. **Invite the Bot to Discord**:
-   - Go to the [Discord Developer Portal](https://discord.com/developers/applications).
-   - Create a New Application and go to the **Bot** tab to get your token (put this in `.env`).
+   - Still in the [Discord Developer Portal](https://discord.com/developers/applications) for your bot application, go to the **Bot** tab.
    - Scroll down and enable the **Message Content Intent** and **Server Members Intent**.
    - Go to **OAuth2 > URL Generator**.
    - Select scopes: `bot`.
