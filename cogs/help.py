@@ -28,8 +28,9 @@ class HelpCog(commands.Cog, name="Help"):
         )
         embed.add_field(name="📅 `!help schedule`", value="How to schedule and manage your tournaments (!create, !move, !upcoming, !co_owner).", inline=False)
         embed.add_field(name="🎮 `!help play`", value="For players: How to join, report scores, and view rules.", inline=False)
-        embed.add_field(name="🔴 `!help live`", value="For admins: How to start, revert mistakes, and DQ players.", inline=False)
-        embed.set_footer(text="Type !help <category> (e.g. !help live) to read a guide.")
+        embed.add_field(name="🔴 `!help manage`", value="For admins: How to start, revert mistakes, and DQ players.", inline=False)
+        embed.add_field(name="⚙️ `!help misc`", value="Other utilities like leaderboards and testing.", inline=False)
+        embed.set_footer(text="Type !help <category> (e.g. !help manage) to read a guide.")
         await ctx.send(embed=embed)
 
     @custom_help.command(name="schedule")
@@ -58,14 +59,25 @@ class HelpCog(commands.Cog, name="Help"):
         embed.add_field(name="4. Dropping Out", value="`!drop` to forfeit mid-tournament.", inline=False)
         await ctx.send(embed=embed)
 
-    @custom_help.command(name="live")
-    async def help_live(self, ctx: commands.Context) -> None:
-        embed = discord.Embed(title="🔴 Guide: Running a Live Tournament", color=discord.Color.red())
+    @custom_help.command(name="manage")
+    async def help_manage(self, ctx: commands.Context) -> None:
+        embed = discord.Embed(title="🔴 Guide: Managing a Live Tournament", color=discord.Color.red())
         embed.add_field(name="1. Starting (`!start`)", value="`!start {game}` generates the double-elimination bracket image and posts the first Matchboard.", inline=False)
         embed.add_field(name="2. Brackets (`!bracket`)", value="`!bracket {game}` posts the latest visual tree image of the bracket.", inline=False)
         embed.add_field(
             name="3. Admin Controls",
             value="- `!dq {game} @Player`: Disqualifies an unresponsive player.\n- `!revert {game} {state_id}`: Undo a misreported score by reverting the bracket to a previous state. The State ID is printed with every bracket image.",
+            inline=False,
+        )
+        await ctx.send(embed=embed)
+
+    @custom_help.command(name="misc")
+    async def help_misc(self, ctx: commands.Context) -> None:
+        embed = discord.Embed(title="⚙️ Guide: Miscellaneous", color=discord.Color.light_grey())
+        embed.add_field(name="1. Prestige (`!leaderboard`)", value="View the reigning champions for every game.", inline=False)
+        embed.add_field(
+            name="2. Testing (`!test_tourney`)",
+            value="`!test_tourney [game]`\nInstantly generates a dummy tournament with 5 simulated players and starts it. Used by admins to rapidly test bracket flow.\n*Example:* `!test_tourney Smash`",
             inline=False,
         )
         await ctx.send(embed=embed)
