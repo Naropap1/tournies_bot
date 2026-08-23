@@ -155,6 +155,20 @@ class ParticipationCog(commands.Cog, name="Participation"):
 
         Usage: !drop
         """
+        from cogs.live import (
+            _bracket_states,
+            _rebuild_bracket_state,
+            _persist_matches,
+            _announce_open_matches,
+            _conclude_tournament,
+        )
+        from bracket.engine import (
+            get_match_for_player,
+            report_match_result,
+            is_bracket_complete,
+            get_winner,
+        )
+
         # Find any live tournament this player is in
         tournaments = await self.bot.db.get_upcoming_tournaments(ctx.guild.id)
         live_tournaments = [t for t in tournaments if t.status == "live"]
@@ -165,31 +179,58 @@ class ParticipationCog(commands.Cog, name="Participation"):
             if entrant and not entrant.dropped:
                 await self.bot.db.update_entrant(entrant.id, dropped=True)
 
-                # Auto-forfeit any open match
-                open_match = await self.bot.db.get_player_open_match(t.id, ctx.author.id)
-                if open_match:
-                    # Determine opponent as winner
-                    opponent_id = (
-                        open_match.player2_id
-                        if open_match.player1_id == ctx.author.id
-                        else open_match.player1_id
+                # Advance the bracket via the engine
+                state = _bracket_states.get(t.id)
+                if not state:
+                    state = await _rebuild_bracket_state(self.bot, t.id)
+
+                if state:
+                    player_match = get_match_for_player(state, ctx.author.id)
+                    if player_match:
+                        opponent_id = (
+                            player_match.player2_id
+                            if player_match.player1_id == ctx.author.id
+                            else player_match.player1_id
+                        )
+                        if opponent_id:
+                            match_key = (player_match.round_num, player_match.match_number)
+                            state, newly_opened = report_match_result(
+                                state, match_key, opponent_id, "FF"
+                            )
+                            _bracket_states[t.id] = state
+                            await _persist_matches(self.bot, t.id, state)
+
+                            await ctx.send(
+                                f"🏳️ {ctx.author.mention} has forfeited from the **{t.game}** tournament. "
+                                f"<@{opponent_id}> advances."
+                            )
+
+                            # Check if tournament is complete
+                            if is_bracket_complete(state):
+                                winner = get_winner(state)
+                                if winner:
+                                    await _conclude_tournament(ctx, self.bot, t, winner)
+                            else:
+                                await _announce_open_matches(ctx, t, newly_opened)
+                        else:
+                            await ctx.send(
+                                f"🏳️ {ctx.author.mention} has forfeited from the **{t.game}** tournament."
+                            )
+                    else:
+                        await ctx.send(
+                            f"🏳️ {ctx.author.mention} has forfeited from the **{t.game}** tournament. "
+                            f"(No active match to forfeit)"
+                        )
+                else:
+                    await ctx.send(
+                        f"🏳️ {ctx.author.mention} has forfeited from the **{t.game}** tournament."
                     )
-                    await self.bot.db.update_match(
-                        open_match.id,
-                        winner_id=opponent_id,
-                        score="FF",
-                        status="complete",
-                    )
+
                 dropped_from = t
+                logger.info("%s dropped from tournament #%d (%s)", ctx.author, t.id, t.game)
                 break
 
-        if dropped_from:
-            await ctx.send(
-                f"🏳️ {ctx.author.mention} has forfeited from the **{dropped_from.game}** tournament. "
-                f"All remaining matches are auto-forfeited."
-            )
-            logger.info("%s dropped from tournament #%d (%s)", ctx.author, dropped_from.id, dropped_from.game)
-        else:
+        if not dropped_from:
             await ctx.send("❌ You're not currently in any live tournament.")
 
 
