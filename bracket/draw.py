@@ -184,9 +184,9 @@ def _draw_match_box(draw, x, y, w, h, match, font, is_gf=False):
     p2 = f"<Player {match.player2_id}>" if match.player2_id else "TBD"
     
     if match.winner_id == match.player1_id:
-        p1 = f"👑 {p1}"
+        p1 = f"♛ {p1}"
     elif match.winner_id == match.player2_id:
-        p2 = f"👑 {p2}"
+        p2 = f"♛ {p2}"
         
     p1_color = (255,255,255) if match.winner_id == match.player1_id or not match.winner_id else (150,150,150)
     p2_color = (255,255,255) if match.winner_id == match.player2_id or not match.winner_id else (150,150,150)

@@ -63,7 +63,7 @@ class LiveCog(commands.Cog, name="Live Execution"):
         
         embed = discord.Embed(
             title=f"[{tournament.game}] ⚔️ Open Matches (State: {tournament.version})",
-            description=desc + f"\n*Report scores with `!win {tournament.game} 2-1` or `!win {tournament.game} 2-1 @Opponent` if playing multiple matches.*",
+            description=desc + f"\n*Report wins with `!win {tournament.game}`. (Or `!win {tournament.game} @Winner` to report for someone else).*".strip(),
             color=discord.Color.red()
         )
         await channel.send(embed=embed)
@@ -116,35 +116,24 @@ class LiveCog(commands.Cog, name="Live Execution"):
         await ctx.send(content=f"**[{game}] Current Bracket:** (State: {tournament.version})", file=image_file)
 
     @commands.command(name="win")
-    async def report_win(self, ctx: commands.Context, game: str, score: str, opponent: discord.Member = None) -> None:
+    async def report_win(self, ctx: commands.Context, game: str, winner: discord.Member = None) -> None:
         tournament = await self.bot.db.get_tournament_by_game(ctx.guild.id, game, status="live")
         if not tournament:
             await ctx.send(f"❌ No active `{game}` tournament found.")
             return
 
+        winner_id = winner.id if winner else ctx.author.id
+        
         matches = await self.bot.db.get_matches(tournament.id)
         state = generate_bracket(tournament.id, [])
         state.matches = matches
 
         # Find the match
-        match = None
-        open_matches = get_open_matches(state)
-        
-        if opponent:
-            for m in open_matches:
-                if (m.player1_id == ctx.author.id and m.player2_id == opponent.id) or (m.player1_id == opponent.id and m.player2_id == ctx.author.id):
-                    match = m
-                    break
-        else:
-            for m in open_matches:
-                if m.player1_id == ctx.author.id or m.player2_id == ctx.author.id:
-                    if match is not None:
-                        await ctx.send(f"❌ You have multiple open matches. Please specify your opponent: `!win {game} {score} @Opponent`")
-                        return
-                    match = m
+        from bracket.engine import get_match_for_player
+        match = get_match_for_player(state, winner_id)
 
         if not match:
-            await ctx.send(f"❌ You don't have any open matches in `{game}`.")
+            await ctx.send(f"❌ <@{winner_id}> does not have any open matches in `{game}`.")
             return
 
         # Create a snapshot before modifying
@@ -162,7 +151,7 @@ class LiveCog(commands.Cog, name="Live Execution"):
 
         # Apply win
         try:
-            state, newly_opened = report_match_result(state, (match.round_num, match.match_number), ctx.author.id, score)
+            state, newly_opened = report_match_result(state, (match.round_num, match.match_number), winner_id, "W")
         except Exception as e:
             await ctx.send(f"❌ Error applying result: {e}")
             return
@@ -170,7 +159,8 @@ class LiveCog(commands.Cog, name="Live Execution"):
         await self.bot.db.delete_matches(tournament.id)
         await self.bot.db.insert_matches(state.matches)
 
-        await ctx.send(f"✅ **[{game}]** <@{ctx.author.id}> defeated <@{match.player1_id if ctx.author.id == match.player2_id else match.player2_id}> ({score})")
+        loser_id = match.player1_id if match.player2_id == winner_id else match.player2_id
+        await ctx.send(f"✅ **[{game}]** <@{winner_id}> defeated <@{loser_id}>!")
         
         image_file = generate_bracket_image(state)
         await ctx.send(content=f"**[{game}] Bracket Updated:** (State: {tournament.version})", file=image_file)

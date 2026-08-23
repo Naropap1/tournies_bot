@@ -53,7 +53,7 @@ class HelpCog(commands.Cog, name="Help"):
         embed.add_field(name="2. Rules", value="`!rules {game}` to view the custom rules set by the organizer.", inline=False)
         embed.add_field(
             name="3. Playing & Reporting",
-            value="When the tournament starts, open matches are posted to the Matchboard.\nReport wins: `!win {game} {score}` (e.g. `!win Smash 2-1`).",
+            value="When the tournament starts, open matches are posted to the Matchboard.\nReport wins: `!win {game}` (or `!win {game} @Winner` to report for someone else).",
             inline=False,
         )
         embed.add_field(name="4. Dropping Out", value="`!drop` to forfeit mid-tournament.", inline=False)
