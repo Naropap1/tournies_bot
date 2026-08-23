@@ -59,10 +59,7 @@ class LiveCog(commands.Cog, name="Live Bracket"):
             for pid in (m.player1_id, m.player2_id):
                 if pid and pid not in names_map:
                     member = guild.get_member(pid)
-                    if pid < 1000:
-                        names_map[pid] = f"User{pid}"
-                    else:
-                        names_map[pid] = member.display_name if member else str(pid)
+                    names_map[pid] = member.display_name if member else str(pid)
         return generate_bracket_image(state, names_map=names_map)
 
     async def _post_matchboard(self, channel, tournament, state: BracketState):
@@ -72,8 +69,8 @@ class LiveCog(commands.Cog, name="Live Bracket"):
 
         desc = ""
         for m in open_matches:
-            p1 = f"<@{m.player1_id}>" if m.player1_id > 1000 else f"@{m.player1_id}"
-            p2 = f"<@{m.player2_id}>" if m.player2_id > 1000 else f"@{m.player2_id}"
+            p1 = f\"<@{m.player1_id}>\"
+            p2 = f\"<@{m.player2_id}>\"
             title = f"Round {m.round_num}" if m.round_num > 0 else (f"Grand Finals" if m.round_num == 0 else f"Losers Round {abs(m.round_num)}")
             desc += f"**{title} (Match {m.match_number})**\n{p1} vs {p2}\n\n"
         
@@ -198,8 +195,8 @@ class LiveCog(commands.Cog, name="Live Bracket"):
 
         loser_id = match.player1_id if match.player2_id == winner_id else match.player2_id
         
-        w_ping = f"<@{winner_id}>" if winner_id > 1000 else f"@{winner_id}"
-        l_ping = f"<@{loser_id}>" if loser_id > 1000 else f"@{loser_id}"
+        w_ping = f\"<@{winner_id}>\"
+        l_ping = f\"<@{loser_id}>\"
         await ctx.send(f"✅ **[{game}]** {w_ping} defeated {l_ping}!")
         
         image_file = self._get_bracket_image(ctx.guild, state)
@@ -325,8 +322,8 @@ class LiveCog(commands.Cog, name="Live Bracket"):
         await self.bot.db.delete_matches(tournament.id)
         await self.bot.db.insert_matches(state.matches)
 
-        p_ping = f"@{player_id}" if player_id < 1000 else f"<@{player_id}>"
-        w_ping = f"@{winner_id}" if winner_id < 1000 else f"<@{winner_id}>"
+        p_ping = f\"<@{player_id}>\"
+        w_ping = f\"<@{winner_id}>\"
         await ctx.send(f"🚨 **[{game}]** {p_ping} has been disqualified. {w_ping} advances.")
         
         if is_bracket_complete(state):
@@ -342,7 +339,7 @@ class LiveCog(commands.Cog, name="Live Bracket"):
         winner_id = get_winner(state)
         await self.bot.db.update_tournament(tournament.id, status="completed")
         
-        w_ping = f"<@{winner_id}>" if winner_id > 1000 else f"@{winner_id}"
+        w_ping = f\"<@{winner_id}>\"
         
         # Insert Champion
         from db.models import Champion

@@ -49,7 +49,55 @@ class TestingCog(commands.Cog, name="Testing"):
             await ctx.invoke(live_cog.start_tournament, game=game)
         else:
             await ctx.send("❌ Live cog not found.")
+    @commands.command(name="join_dummy")
+    @commands.has_permissions(administrator=True)
+    async def join_dummy(self, ctx: commands.Context, *, args: str) -> None:
+        """Join a fake user to a tournament for testing."""
+        args = args.strip()
+        parts = args.split()
+        if len(parts) < 2:
+            await ctx.send("❌ Usage: `!join_dummy {game} {fake_id}`")
+            return
+            
+        last_part = parts[-1]
+        player_id = None
+        game = " ".join(parts[:-1])
+        
+        if last_part.startswith('@') and last_part[1:].isdigit():
+            player_id = int(last_part[1:])
+        elif last_part.isdigit():
+            player_id = int(last_part)
+        elif last_part.startswith('<@') and last_part.endswith('>'):
+            try:
+                player_id = int(last_part[2:-1].replace('!', ''))
+            except ValueError:
+                pass
+                
+        if not player_id:
+            await ctx.send("❌ Could not parse fake ID. Example: `!join_dummy Smash Bros 101`")
+            return
 
+        tournament = await self.bot.db.get_tournament_by_game(ctx.guild.id, game, status="scheduled")
+        if not tournament:
+            await ctx.send(f"❌ No scheduled `{game}` tournament found.")
+            return
+
+        existing = await self.bot.db.get_entrant(tournament.id, player_id)
+        if existing:
+            if existing.dropped:
+                await self.bot.db.update_entrant(existing.id, dropped=False)
+                await ctx.send(f"✅ Re-enrolled `<@{player_id}>` into `{game}`.")
+            else:
+                await ctx.send(f"❌ `<@{player_id}>` is already in the tournament.")
+            return
+
+        ent = Entrant(
+            tournament_id=tournament.id,
+            discord_id=player_id,
+            joined_at=datetime.now(ZoneInfo("UTC"))
+        )
+        await self.bot.db.insert_entrant(ent)
+        await ctx.send(f"✅ Fake user `<@{player_id}>` joined `{game}`!")
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(TestingCog(bot))

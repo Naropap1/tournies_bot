@@ -209,7 +209,7 @@ class SchedulingCog(commands.Cog, name="Scheduling"):
         await self.bot.db.add_owner(tournament.id, member_id)
         
         # Display nicely for dummy vs real users
-        mention = f"@{member_id}" if member_id < 1000 else f"<@{member_id}>"
+        mention = f\"<@{member_id}>\"
         await ctx.send(f"✅ {mention} has been added as a co-owner for `{game}`!")
 
     @commands.command(name="rules")
