@@ -122,7 +122,8 @@ class LiveCog(commands.Cog, name="Live Bracket"):
             await ctx.send("❌ No matches found for this tournament.")
             return
 
-        state = generate_bracket(tournament.id, []) # Empty entrants to just get the routes
+        entrants = await self.bot.db.get_entrants(tournament.id)
+        state = generate_bracket(tournament.id, [e.discord_id for e in entrants])
         state.matches = matches
         
         image_file = self._get_bracket_image(ctx.guild, state)
@@ -159,7 +160,8 @@ class LiveCog(commands.Cog, name="Live Bracket"):
             await ctx.send(f"❌ No active `{game}` tournament found.")
             return
         matches = await self.bot.db.get_matches(tournament.id)
-        state = generate_bracket(tournament.id, [])
+        entrants = await self.bot.db.get_entrants(tournament.id)
+        state = generate_bracket(tournament.id, [e.discord_id for e in entrants])
         state.matches = matches
 
         # Find the match
@@ -248,7 +250,8 @@ class LiveCog(commands.Cog, name="Live Bracket"):
         
         tournament.version = version
 
-        state = generate_bracket(tournament.id, [])
+        entrants = await self.bot.db.get_entrants(tournament.id)
+        state = generate_bracket(tournament.id, [e.discord_id for e in entrants])
         state.matches = restored_matches
 
         await ctx.send(f"⏪ **[{game}] Bracket reverted to State {version}.**")
@@ -292,7 +295,8 @@ class LiveCog(commands.Cog, name="Live Bracket"):
             return
 
         matches = await self.bot.db.get_matches(tournament.id)
-        state = generate_bracket(tournament.id, [])
+        entrants = await self.bot.db.get_entrants(tournament.id)
+        state = generate_bracket(tournament.id, [e.discord_id for e in entrants])
         state.matches = matches
 
         match = get_match_for_player(state, player_id)

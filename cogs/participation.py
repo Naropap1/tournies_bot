@@ -101,7 +101,8 @@ class ParticipationCog(commands.Cog, name="Participation"):
                 import json
                 
                 matches = await self.bot.db.get_matches(t.id)
-                state = generate_bracket(t.id, [])
+                entrants = await self.bot.db.get_entrants(t.id)
+                state = generate_bracket(t.id, [e.discord_id for e in entrants])
                 state.matches = matches
 
                 match = get_match_for_player(state, ctx.author.id)
