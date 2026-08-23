@@ -56,7 +56,8 @@ class HelpCog(commands.Cog, name="Help"):
             value="When the tournament starts, open matches are posted to the Matchboard.\nReport wins: `!win {game}` (or `!win {game} @Winner` to report for someone else).",
             inline=False,
         )
-        embed.add_field(name="4. Dropping Out", value="`!drop` to forfeit mid-tournament.", inline=False)
+        embed.add_field(name="4. Viewing the Bracket", value="`!bracket {game}` to generate an image of the current bracket state.", inline=False)
+        embed.add_field(name="5. Dropping Out", value="`!drop {game}` to forfeit mid-tournament.", inline=False)
         await ctx.send(embed=embed)
 
     @custom_help.command(name="manage")
