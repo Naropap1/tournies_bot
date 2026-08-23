@@ -59,7 +59,7 @@ class TourniesBot(commands.Bot):
             if not ALLOWED_CHANNELS:
                 return True
                 
-            return ctx.channel.name in ALLOWED_CHANNELS
+            return ctx.channel.name.lower() in [c.lower() for c in ALLOWED_CHANNELS]
 
     async def setup_hook(self) -> None:
         """Called when the bot is starting up. Initialize DB and load cogs."""
@@ -107,7 +107,7 @@ class TourniesBot(commands.Bot):
             return
         if isinstance(error, commands.CheckFailure):
             from config import ALLOWED_CHANNELS
-            if ALLOWED_CHANNELS and ctx.channel.name not in ALLOWED_CHANNELS:
+            if ALLOWED_CHANNELS and ctx.channel.name.lower() not in [c.lower() for c in ALLOWED_CHANNELS]:
                 return  # Silently ignore if they try to use it in the wrong channel
             await ctx.send("❌ You don't have permission to use this command.")
             return
