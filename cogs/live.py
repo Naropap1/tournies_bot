@@ -291,6 +291,7 @@ class LiveCog(commands.Cog, name="Live Execution"):
             from dateutil.relativedelta import relativedelta
             
             delta_map = {
+                "weekly": relativedelta(weeks=1),
                 "monthly": relativedelta(months=1),
                 "quarterly": relativedelta(months=3),
                 "bi-annually": relativedelta(months=6),
