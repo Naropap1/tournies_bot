@@ -85,7 +85,7 @@ class LiveCog(commands.Cog, name="Live Bracket"):
         await channel.send(embed=embed)
 
     @commands.command(name="start")
-    async def start_tournament(self, ctx: commands.Context, game: str) -> None:
+    async def start_tournament(self, ctx: commands.Context, *, game: str) -> None:
         tournament = await self.bot.db.get_tournament_by_game(ctx.guild.id, game, status="scheduled")
         if not tournament:
             await ctx.send(f"❌ No scheduled `{game}` tournament found.")
@@ -114,7 +114,7 @@ class LiveCog(commands.Cog, name="Live Bracket"):
         await self._post_matchboard(ctx.channel, tournament, state)
 
     @commands.command(name="bracket")
-    async def view_bracket(self, ctx: commands.Context, game: str) -> None:
+    async def view_bracket(self, ctx: commands.Context, *, game: str) -> None:
         tournament = await self.bot.db.get_tournament_by_game(ctx.guild.id, game, status="live")
         if not tournament:
             await ctx.send(f"❌ No active `{game}` tournament found.")
@@ -132,7 +132,22 @@ class LiveCog(commands.Cog, name="Live Bracket"):
         await ctx.send(content=f"**[{game}] Current Bracket:** (State: {tournament.version})", file=image_file)
 
     @commands.command(name="win")
-    async def report_win(self, ctx: commands.Context, game: str, winner: discord.Member = None) -> None:
+    async def report_win(self, ctx: commands.Context, *, args: str) -> None:
+        args = args.strip()
+        parts = args.split()
+        winner = None
+        game = args
+        if parts:
+            last_part = parts[-1]
+            if last_part.startswith('<@') and last_part.endswith('>'):
+                try:
+                    member_id = int(last_part[2:-1].replace('!', ''))
+                    winner = ctx.guild.get_member(member_id)
+                    if winner:
+                        game = " ".join(parts[:-1])
+                except ValueError:
+                    pass
+        
         tournament = await self.bot.db.get_tournament_by_game(ctx.guild.id, game, status="live")
         if not tournament:
             await ctx.send(f"❌ No active `{game}` tournament found.")
@@ -191,7 +206,20 @@ class LiveCog(commands.Cog, name="Live Bracket"):
                 await self._post_matchboard(ctx.channel, tournament, state)
 
     @commands.command(name="revert")
-    async def revert_bracket(self, ctx: commands.Context, game: str, version: int) -> None:
+    async def revert_bracket(self, ctx: commands.Context, *, args: str) -> None:
+        args = args.strip()
+        parts = args.split()
+        if len(parts) < 2:
+            await ctx.send("❌ Usage: `!revert {game} {version}`")
+            return
+            
+        try:
+            version = int(parts[-1])
+            game = " ".join(parts[:-1])
+        except ValueError:
+            await ctx.send("❌ Usage: `!revert {game} {version}` (version must be a number)")
+            return
+            
         tournament = await self.bot.db.get_tournament_by_game(ctx.guild.id, game, status="live")
         if not tournament:
             await ctx.send(f"❌ No active `{game}` tournament found.")
@@ -226,7 +254,27 @@ class LiveCog(commands.Cog, name="Live Bracket"):
         await self._post_matchboard(ctx.channel, tournament, state)
 
     @commands.command(name="dq")
-    async def disqualify(self, ctx: commands.Context, game: str, player: discord.Member) -> None:
+    async def disqualify(self, ctx: commands.Context, *, args: str) -> None:
+        args = args.strip()
+        parts = args.split()
+        if len(parts) < 2:
+            await ctx.send("❌ Usage: `!dq {game} @Player`")
+            return
+            
+        last_part = parts[-1]
+        player = None
+        game = " ".join(parts[:-1])
+        if last_part.startswith('<@') and last_part.endswith('>'):
+            try:
+                member_id = int(last_part[2:-1].replace('!', ''))
+                player = ctx.guild.get_member(member_id)
+            except ValueError:
+                pass
+                
+        if not player:
+            await ctx.send("❌ Could not resolve the player ping. Usage: `!dq {game} @Player`")
+            return
+
         tournament = await self.bot.db.get_tournament_by_game(ctx.guild.id, game, status="live")
         if not tournament:
             await ctx.send(f"❌ No active `{game}` tournament found.")

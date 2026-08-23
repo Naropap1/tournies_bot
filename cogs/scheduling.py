@@ -39,20 +39,42 @@ class SchedulingCog(commands.Cog, name="Scheduling"):
 
     @commands.command(name="create")
     async def create_tournament(
-        self, ctx: commands.Context, game: str, date: str, time: str, frequency: str = DEFAULT_FREQUENCY, *, rules: str = "Standard rules apply."
+        self, ctx: commands.Context, *, args: str
     ) -> None:
         """
         Schedule a new tournament. All times are parsed as EST.
-
         Usage: !create {game} {date} {time} [frequency] [rules...]
-        Example: !create Smash 2026-09-15 7PM monthly Best of 3 until finals. No items.
+        Example: !create Smash Bros 2026-09-15 7PM monthly Best of 3 until finals. No items.
         """
-        frequency = frequency.lower()
-        if frequency not in VALID_FREQUENCIES:
-            # Maybe the user didn't provide a frequency and went straight to rules
-            # We assume frequency is monthly and prepend the invalid freq to rules
-            rules = f"{frequency} {rules}".strip()
-            frequency = DEFAULT_FREQUENCY
+        import re
+        from config import VALID_FREQUENCIES, DEFAULT_FREQUENCY
+        
+        match = re.search(r'\s+(\d{4}-\d{2}-\d{2})\s+', f" {args} ")
+        if not match:
+            await ctx.send("❌ Could not parse date. Usage: `!create {game} {YYYY-MM-DD} {Time} [Frequency] [Rules...]`")
+            return
+            
+        date = match.group(1)
+        game = args[:args.find(date)].strip()
+        
+        rest = args[args.find(date) + len(date):].strip()
+        rest_parts = rest.split(maxsplit=2)
+        
+        if len(rest_parts) < 1:
+            await ctx.send("❌ Missing time. Usage: `!create {game} {YYYY-MM-DD} {Time} [Frequency] [Rules...]`")
+            return
+            
+        time = rest_parts[0]
+        frequency = DEFAULT_FREQUENCY
+        rules = "Standard rules apply."
+        
+        if len(rest_parts) > 1:
+            if rest_parts[1].lower() in VALID_FREQUENCIES:
+                frequency = rest_parts[1].lower()
+                if len(rest_parts) > 2:
+                    rules = rest_parts[2]
+            else:
+                rules = rest.split(maxsplit=1)[1]
 
         try:
             scheduled_at = _parse_datetime(date, time)
@@ -95,8 +117,26 @@ class SchedulingCog(commands.Cog, name="Scheduling"):
         await ctx.send(embed=embed)
 
     @commands.command(name="move")
-    async def move_tournament(self, ctx: commands.Context, game: str, date: str, time: str) -> None:
+    async def move_tournament(self, ctx: commands.Context, *, args: str) -> None:
         """Reschedule a tournament (owners only). Uses EST."""
+        import re
+        match = re.search(r'\s+(\d{4}-\d{2}-\d{2})\s+', f" {args} ")
+        if not match:
+            await ctx.send("❌ Could not parse date. Usage: `!move {game} {YYYY-MM-DD} {Time}`")
+            return
+            
+        date = match.group(1)
+        game = args[:args.find(date)].strip()
+        
+        rest = args[args.find(date) + len(date):].strip()
+        rest_parts = rest.split()
+        
+        if len(rest_parts) < 1:
+            await ctx.send("❌ Missing time. Usage: `!move {game} {YYYY-MM-DD} {Time}`")
+            return
+            
+        time = rest_parts[0]
+        
         tournament = await self.bot.db.get_tournament_by_game(ctx.guild.id, game, status="scheduled")
         if not tournament:
             await ctx.send(f"❌ No scheduled `{game}` tournament found.")
@@ -124,8 +164,28 @@ class SchedulingCog(commands.Cog, name="Scheduling"):
         await ctx.send(embed=embed)
 
     @commands.command(name="co_owner")
-    async def co_owner(self, ctx: commands.Context, game: str, member: discord.Member) -> None:
+    async def co_owner(self, ctx: commands.Context, *, args: str) -> None:
         """Add a co-owner to a tournament."""
+        args = args.strip()
+        parts = args.split()
+        if len(parts) < 2:
+            await ctx.send("❌ Usage: `!co_owner {game} @Player`")
+            return
+            
+        last_part = parts[-1]
+        member = None
+        game = " ".join(parts[:-1])
+        if last_part.startswith('<@') and last_part.endswith('>'):
+            try:
+                member_id = int(last_part[2:-1].replace('!', ''))
+                member = ctx.guild.get_member(member_id)
+            except ValueError:
+                pass
+                
+        if not member:
+            await ctx.send("❌ Could not resolve the player ping. Usage: `!co_owner {game} @Player`")
+            return
+
         tournament = await self.bot.db.get_tournament_by_game(ctx.guild.id, game, status="scheduled")
         if not tournament:
             tournament = await self.bot.db.get_tournament_by_game(ctx.guild.id, game, status="live")
@@ -146,7 +206,7 @@ class SchedulingCog(commands.Cog, name="Scheduling"):
         await ctx.send(f"✅ {member.mention} has been added as a co-owner for `{game}`!")
 
     @commands.command(name="rules")
-    async def rules(self, ctx: commands.Context, game: str) -> None:
+    async def rules(self, ctx: commands.Context, *, game: str) -> None:
         """View the rules for a specific tournament."""
         tournament = await self.bot.db.get_tournament_by_game(ctx.guild.id, game, status="scheduled")
         if not tournament:
@@ -192,7 +252,7 @@ class SchedulingCog(commands.Cog, name="Scheduling"):
         await ctx.send(embed=embed)
 
     @commands.command(name="delete")
-    async def delete_tournament(self, ctx: commands.Context, game: str) -> None:
+    async def delete_tournament(self, ctx: commands.Context, *, game: str) -> None:
         tournament = await self.bot.db.get_tournament_by_game(ctx.guild.id, game, status="scheduled")
         if not tournament:
             tournament = await self.bot.db.get_tournament_by_game(ctx.guild.id, game, status="live")
