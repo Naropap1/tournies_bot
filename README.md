@@ -39,6 +39,7 @@ A fully functional, native Discord tournament bot tailored for community hubs. T
 
 4. **Invite the Bot to Discord**:
    - Still in the [Discord Developer Portal](https://discord.com/developers/applications) for your bot application, navigate to the **Bot** tab on the left sidebar.
+   - Make sure the **Public Bot** toggle is checked (turned ON) to avoid default authorization link errors.
    - Scroll down to the **Privileged Gateway Intents** section and toggle ON the **Message Content Intent** and **Server Members Intent**, then save your changes. (The bot needs these to read commands like `!join` and see user profiles).
    - Now navigate to the **OAuth2 > URL Generator** tab on the left sidebar.
    - Under **Scopes**, check the box for `bot`.
