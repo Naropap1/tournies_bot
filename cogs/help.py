@@ -66,7 +66,7 @@ class HelpCog(commands.Cog, name="Help"):
         embed.add_field(name="2. Brackets (`!bracket`)", value="`!bracket {game}` posts the latest visual tree image of the bracket.", inline=False)
         embed.add_field(
             name="3. Admin Controls",
-            value="- `!dq {game} @Player`: Disqualifies an unresponsive player.\n- `!revert {game} {state_id}`: Undo a misreported score by reverting the bracket to a previous state. The State ID is printed with every bracket image.",
+            value="- `!dq {game} @Player`: Disqualifies an unresponsive player.\n- `!revert {game} {state_id}`: Undo a misreported score by reverting the bracket to a previous state. The State ID is printed with every bracket image.\n- `!delete {game}`: Completely wipes a tournament and its history from the database. Requires manual `!yes` confirmation.",
             inline=False,
         )
         await ctx.send(embed=embed)
@@ -78,11 +78,6 @@ class HelpCog(commands.Cog, name="Help"):
         embed.add_field(
             name="2. Testing (`!test_tourney`)",
             value="`!test_tourney [game]`\nInstantly generates a dummy tournament with 5 simulated players and starts it. Used by admins to rapidly test bracket flow.\n*Example:* `!test_tourney Smash`",
-            inline=False,
-        )
-        embed.add_field(
-            name="3. Danger Zone (`!delete`)",
-            value="`!delete {game}`\nCompletely wipes a tournament, all its matches, and its history from the database. Requires admin or co-owner permissions and a manual `!yes` confirmation.",
             inline=False,
         )
         await ctx.send(embed=embed)
