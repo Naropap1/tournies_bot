@@ -1,49 +1,83 @@
-﻿# Tournies Bot Design Document
+﻿# Design Document: Tournies Bot 2.0 🏆
 
-## Overview
-Tournies Bot is a native Discord application designed to seamlessly manage community tournaments. It handles scheduling, participation tracking, automatic bracket generation, live bracket visualization, and prestige tracking (leaderboards). It aims to be completely self-contained within Discord without requiring any third-party websites or external tools.
+## 1. Overview
+**Tournies Bot** is a fully automated, 100% native Discord tournament manager. Designed for community hubs and gaming servers, it completely eliminates the need for external websites. It manages the entire tournament lifecycle—from scheduling, rulesets, and signups to visually stunning bracket generation, optimal double-elimination rematch prevention, state-reversions, and prestige tracking—entirely within Discord.
 
-## Architecture
+---
 
-- **Language:** Python 3.12+
-- **Library:** discord.py
-- **Database:** SQLite (via aiosqlite) using WAL mode for concurrent, crash-resistant persistence.
-- **Image Generation:** Pillow (PIL) for dynamically drawing custom bracket images directly to Discord.
+## 2. The User Experience (How it Works)
 
-## Core Features & Workflows
+### Phase 1: Scheduling & Setup
+- **Creation:** A tournament organizer (TO) uses !create to schedule an upcoming tournament. They set a date, time (defaulted strictly to EST), frequency, and a custom rules block.
+- **Delegation:** The organizer can use !co_owner @User to instantly grant trusted community members full administrative access over that specific event.
+- **Discovery & Rules:** Players use !upcoming to see a formatted list of all upcoming events. They can use !rules {game} at any time to read the specific ruleset configured by the TO.
+- **Alerts:** The bot automatically pings the channel 1 week and 24 hours before the event to drive signups.
 
-### 1. Scheduling and Lifecycle Management
-Tournaments are created via !create with a specified game, start time (EST), rules, and an optional recurrence frequency (e.g., one-time, monthly, quarterly).
-- Events exist in a scheduled state until their start time.
-- Users !join or !leave during this phase.
-- A background task alerts players 1 week and 24 hours prior. If minimum participation isn't met, the event auto-cancels.
-- Upon calling !start, the tournament transitions to the live state, locking the roster.
+### Phase 2: Sign-ups & Participation
+- **Joining:** Players type !join Smash. The bot instantly confirms their registration and updates the live roster count.
+- **Backing Out:** Players can use !leave Smash prior to the event starting.
+- **Auto-Pruning:** If a tournament fails to reach the minimum player threshold (2) by start time, the bot automatically cancels it.
 
-### 2. Double-Elimination Bracket Engine
-The bracket engine is purely mathematical and decoupled from the database, producing a strictly topological BracketState mapping.
-- **Seeding:** Standard power-of-2 topological mapping is used. Initial seeding is randomized to prevent exploitation.
-- **Auto-BYEs:** Missing players in non-power-of-2 brackets are replaced with a _BYE_SENTINEL (-1). Any player matched against a BYE is immediately auto-advanced, collapsing the empty branch of the tree.
-- **Advanced Rematch Prevention:** The Losers Bracket cross-over routes utilize industry-standard "minor orderings" (
-atural, everse, half_shift, everse_half_shift, and pair_flip). This mathematically optimal routing prevents players from the same quadrant of the Winners Bracket from rematching too early in the Losers Bracket.
-- **Bracket Resets:** The Grand Finals consists of a primary match (GF1). If the player from the Losers Bracket wins GF1, the engine seamlessly spawns a Bracket Reset match (GF2) to preserve true double-elimination rules.
+### Phase 3: The Live Tournament
+- **Starting:** A TO types !start Smash. The bot locks the roster and dynamically generates the Double-Elimination Bracket. Seeding is completely randomized to prevent exploitation.
+- **Visual Brackets:** The bot generates a custom .png image of a true bracket tree and posts it directly in the chat.
+- **Auto-BYEs:** Missing players in non-power-of-2 brackets are mapped dynamically. Players matched against a BYE are instantly auto-advanced.
+- **Reporting:** When a player wins, they type !win Smash (or a TO types !win Smash @Winner). The bot computationally routes the winner forward and drops the loser to the Losers Bracket using industry-standard optimal rematch-prevention math (everse_half_shift, pair_flip, etc.).
+- **Progress Tracking:** The bot posts an updated visual bracket instantly upon every match conclusion. TOs can use !ping Smash to alert any players who are currently holding up open matches.
+- **State Reversion:** A TO can instantly roll back the tournament using !revert {game} {state_id} if a match is misreported.
+- **Grand Finals Reset:** If the champion of the Losers Bracket defeats the champion of the Winners Bracket in the Grand Finals, the bot automatically generates and visualizes a "Bracket Reset" (GF2) match to preserve true double-elimination rules.
 
-### 3. Native Image Rendering
-Instead of relying on web-based HTML/CSS visualizers, the bot uses Python's Pillow library to draw brackets directly to a .png file.
-- Calculates dynamic canvas dimensions based on the depth of the Winners and Losers brackets.
-- Re-aligns matches strictly to their respective columns, preventing column-collapse bugs when early Loser rounds consist purely of invisible BYEs.
-- Explicitly handles horizontal offsetting for the GF2 (Bracket Reset) match so it remains visible.
+### Phase 4: Glory & Prestige
+- **Crowning the Champion:** The bot announces the winner and records the victory in the database Hall of Fame.
+- **Auto-Scheduling:** Recurring events are automatically rescheduled for their next iteration.
+- **The Leaderboard:** Players can use !leaderboard to view server-wide champions for every game.
 
-### 4. Live Match Progression
-Players advance through the tournament using simple text commands like !win [game] [@player].
-- The bot locates the current open match involving the reported winner, logs the result, and computes the cascading routes for both the winner (advancing) and the loser (dropping to the Losers Bracket or being eliminated).
-- Matches are fully deleted and re-inserted into the SQLite database upon every update to maintain 100% state synchronization.
-- A fresh, updated bracket image is posted to the channel immediately following any state change.
-- Server admins can use !revert {state_id} to rollback to previous bracket configurations in case of accidental reports.
+---
 
-### 5. Conclusion & Prestige
-When the final match concludes (either GF1 or GF2):
-- The tournament status is marked as completed.
-- A Champion record is inserted into the database to persist the winner's legacy.
-- A final gold-trimmed embed and bracket image are posted.
-- If the tournament frequency is recurring, the next event in the series is automatically generated and scheduled in the database.
-- The !leaderboard command dynamically aggregates these Champions, displaying the most recent reigning champion for every game played on the server.
+## 3. Comprehensive Command Reference
+
+### 📅 Scheduling Commands (Organizers)
+- !create {game} {date} {time} [frequency] [rules...] — Schedules a new tournament (EST).
+- !move {game} {date} {time} — Reschedules an upcoming tournament.
+- !co_owner {game} @User — Grants admin permissions for a specific event.
+- !upcoming — Displays active and scheduled events.
+
+### 🎮 Participation Commands (Players)
+- !join {game} — Signs you up for an upcoming tournament.
+- !leave {game} — Removes you from the roster.
+- !rules {game} — View the tournament ruleset.
+- !drop {game} — Forfeits remaining matches in a live event.
+
+### 🔴 Live Execution Commands (During the Event)
+- !start {game} — Locks roster and starts the bracket (TO only).
+- !bracket {game} — Posts the latest bracket image.
+- !ping {game} — Pings all players currently waiting in open matches (TO only).
+- !win {game} [@Winner] — Reports a win for your active match (TOs can tag others).
+- !revert {game} {state_id} — Rolls back bracket to a previous state (TO only).
+- !dq {game} @Player — Forcibly disqualifies an unresponsive player (TO only).
+
+### 🏆 Prestige & Testing
+- !leaderboard — Displays server champions.
+- !test_tourney [game] — Generates a dummy one-time tournament with 5 placeholder players for testing.
+- !join_dummy {game} {dummy_id} — Injects a fake player account into a scheduled tournament.
+
+---
+
+## 4. Technical Architecture
+
+### Internal Modules
+- **ot.py** — Main entry point; handles DB initialization and loads Cogs.
+- **config.py** — Centralized configuration variables.
+- **racket/engine.py** — Pure computation module handling advanced double-elimination routing topology.
+- **racket/draw.py** — Uses Python Pillow (PIL) to natively render and offset visual bracket trees.
+- **cogs/** — Modularized Discord features (live, participation, scheduling, prestige, help, 	esting).
+- **	asks/** — Background loops driving the 1-week/24-hour alerting system.
+
+### Database Schema (SQLite WAL)
+- **	ournaments**: Tracks metadata (rules, version, scheduling).
+- **	ournament_owners**: Maps tournaments to multiple Discord owners.
+- **entrants**: Tracks tournament rosters.
+- **matches**: Tracks individual sets and status natively.
+- **racket_snapshots**: JSON dumps generated upon every state change for instantaneous rollbacks.
+- **champions**: Hall of Fame tracking for the leaderboard.
+- **lert_logs**: Ensures background alerts are only sent once per threshold.
