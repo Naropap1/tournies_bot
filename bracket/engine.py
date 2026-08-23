@@ -187,6 +187,8 @@ def generate_bracket(tournament_id: int, entrant_ids: List[int], best_of_standar
         routes[(match.round_num, match.match_number)] = BracketRoute(
             winner_to=None, winner_slot=1, loser_to=None, loser_slot=None
         )
+    # Ensure GF2 exists in routes so report_match_result doesn't KeyError if it's in the DB
+    routes[(0, 2)] = BracketRoute(winner_to=None, winner_slot=1, loser_to=None, loser_slot=None)
 
     # Winners routing
     for r in range(1, k + 1):
