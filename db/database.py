@@ -208,6 +208,10 @@ class Database:
         await self._conn.execute(f"UPDATE tournaments SET {set_clause} WHERE id = ?", values)
         await self._conn.commit()
 
+    async def delete_tournament(self, tournament_id: int):
+        await self._conn.execute("DELETE FROM tournaments WHERE id = ?", (tournament_id,))
+        await self._conn.commit()
+
     # --- Snapshots ---
     async def insert_snapshot(self, snapshot: BracketSnapshot):
         await self._conn.execute(

@@ -80,6 +80,11 @@ class HelpCog(commands.Cog, name="Help"):
             value="`!test_tourney [game]`\nInstantly generates a dummy tournament with 5 simulated players and starts it. Used by admins to rapidly test bracket flow.\n*Example:* `!test_tourney Smash`",
             inline=False,
         )
+        embed.add_field(
+            name="3. Danger Zone (`!delete`)",
+            value="`!delete {game}`\nCompletely wipes a tournament, all its matches, and its history from the database. Requires admin or co-owner permissions and a manual `!yes` confirmation.",
+            inline=False,
+        )
         await ctx.send(embed=embed)
 
 async def setup(bot: commands.Bot) -> None:

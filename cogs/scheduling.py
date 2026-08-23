@@ -191,5 +191,36 @@ class SchedulingCog(commands.Cog, name="Scheduling"):
             )
         await ctx.send(embed=embed)
 
+    @commands.command(name="delete")
+    async def delete_tournament(self, ctx: commands.Context, game: str) -> None:
+        tournament = await self.bot.db.get_tournament_by_game(ctx.guild.id, game, status="scheduled")
+        if not tournament:
+            tournament = await self.bot.db.get_tournament_by_game(ctx.guild.id, game, status="live")
+            
+        if not tournament:
+            await ctx.send(f"❌ No active or scheduled `{game}` tournament found.")
+            return
+
+        is_owner = ctx.author.id in tournament.owners
+        is_admin = ctx.author.guild_permissions.administrator
+        if not (is_owner or is_admin):
+            await ctx.send("❌ Only a tournament co-owner or a server administrator can delete this tournament.")
+            return
+
+        import asyncio
+        await ctx.send(f"⚠️ **WARNING:** You are about to completely delete the `{game}` tournament and ALL of its match data, entrants, and snapshots! This action **CANNOT BE UNDONE**.\n\nType `!yes` in the next 15 seconds to confirm deletion.")
+
+        def check(m):
+            return m.author == ctx.author and m.channel == ctx.channel and m.content.lower() == "!yes"
+
+        try:
+            msg = await self.bot.wait_for('message', check=check, timeout=15.0)
+        except asyncio.TimeoutError:
+            await ctx.send(f"⏳ Deletion of `{game}` timed out and was cancelled.")
+            return
+
+        await self.bot.db.delete_tournament(tournament.id)
+        await ctx.send(f"🗑️ The `{game}` tournament has been completely deleted.")
+
 async def setup(bot: commands.Bot) -> None:
     await bot.add_cog(SchedulingCog(bot))
