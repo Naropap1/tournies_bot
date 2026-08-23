@@ -1,0 +1,2 @@
+2026-08-23 11:13:03,207 [WARNING] discord.client: PyNaCl is not installed, voice will NOT be supported
+2026-08-23 11:13:03,207 [WARNING] discord.client: davey is not installed, voice will NOT be supported
