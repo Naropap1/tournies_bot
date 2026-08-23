@@ -27,7 +27,7 @@ ALLOWED_CHANNELS: list[str] = [ch.strip() for ch in os.getenv("ALLOWED_CHANNELS"
 
 # --- Tournament Defaults ---
 DEFAULT_FREQUENCY: str = "monthly"
-VALID_FREQUENCIES: list[str] = ["monthly", "quarterly", "bi-annually", "annually"]
+VALID_FREQUENCIES: list[str] = ["one-time", "monthly", "quarterly", "bi-annually", "annually"]
 MIN_ENTRANTS: int = 2
 
 # --- Match Settings ---

@@ -38,3 +38,20 @@ discord.ext.commands.errors.ExtensionFailed: Extension 'cogs.live' raised an err
 2026-08-23 13:18:22,391 [INFO] tournies_bot: Loaded cog: tasks.alerts
 2026-08-23 13:18:22,987 [INFO] tournies_bot: Shutting down...
 2026-08-23 13:18:22,996 [INFO] tasks.alerts: Alert loop stopped.
+2026-08-23 14:05:41,385 [WARNING] discord.client: PyNaCl is not installed, voice will NOT be supported
+2026-08-23 14:05:41,385 [WARNING] discord.client: davey is not installed, voice will NOT be supported
+2026-08-23 14:05:41,388 [INFO] discord.client: logging in using static token
+2026-08-23 14:05:41,734 [INFO] tournies_bot: Initializing database at D:\Code\tournies_bot\tournies.db ...
+2026-08-23 14:05:41,737 [INFO] tournies_bot: Database initialized successfully.
+2026-08-23 14:05:41,739 [INFO] tournies_bot: Loaded cog: cogs.help
+2026-08-23 14:05:41,745 [INFO] tournies_bot: Loaded cog: cogs.scheduling
+2026-08-23 14:05:41,746 [INFO] tournies_bot: Loaded cog: cogs.participation
+2026-08-23 14:05:41,771 [INFO] tournies_bot: Loaded cog: cogs.live
+2026-08-23 14:05:41,772 [INFO] tournies_bot: Loaded cog: cogs.prestige
+2026-08-23 14:05:41,773 [INFO] tournies_bot: Loaded cog: cogs.testing
+2026-08-23 14:05:41,775 [INFO] tasks.alerts: Alert loop started (interval: 30 min)
+2026-08-23 14:05:41,775 [INFO] tournies_bot: Loaded cog: tasks.alerts
+2026-08-23 14:05:42,097 [INFO] discord.gateway: Shard ID None has connected to Gateway (Session ID: b302204750805f83a89c3be3aa17aa6a).
+2026-08-23 14:05:44,106 [INFO] tasks.alerts: Alert loop waiting complete, bot is ready.
+2026-08-23 14:05:44,106 [INFO] tournies_bot: Logged in as Tournies Bot#2540 (ID: 1541118402272436615)
+2026-08-23 14:05:44,106 [INFO] tournies_bot: Connected to 1 guild(s)

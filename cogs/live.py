@@ -269,11 +269,52 @@ class LiveCog(commands.Cog, name="Live Execution"):
         winner_id = get_winner(state)
         await self.bot.db.update_tournament(tournament.id, status="completed")
         
+        # Insert Champion
+        from db.models import Champion
+        champ = Champion(
+            guild_id=tournament.guild_id,
+            game=tournament.game,
+            discord_id=winner_id,
+            tournament_id=tournament.id,
+            won_at=datetime.now(ZoneInfo("UTC"))
+        )
+        await self.bot.db.insert_champion(champ)
+
         embed = discord.Embed(
             title=f"🏆 [{tournament.game}] Tournament Completed! 🏆",
             description=f"**Congratulations to <@{winner_id}> for winning it all!**",
             color=discord.Color.gold()
         )
+        
+        # Reschedule logic
+        if tournament.frequency != "one-time":
+            from dateutil.relativedelta import relativedelta
+            
+            delta_map = {
+                "monthly": relativedelta(months=1),
+                "quarterly": relativedelta(months=3),
+                "bi-annually": relativedelta(months=6),
+                "annually": relativedelta(years=1)
+            }
+            delta = delta_map.get(tournament.frequency.lower(), relativedelta(months=1))
+            next_date = tournament.scheduled_at + delta
+            
+            # Insert the next scheduled event
+            new_t = Tournament(
+                guild_id=tournament.guild_id,
+                channel_id=tournament.channel_id,
+                game=tournament.game,
+                scheduled_at=next_date,
+                frequency=tournament.frequency,
+                status="scheduled",
+                created_at=datetime.now(ZoneInfo("UTC")),
+                rules=tournament.rules,
+                owners=tournament.owners,
+                version=1
+            )
+            await self.bot.db.insert_tournament(new_t)
+            embed.add_field(name="🔄 Auto-Rescheduled", value=f"The next **{tournament.game}** event is scheduled for <t:{int(next_date.timestamp())}:F>!", inline=False)
+
         await channel.send(embed=embed)
         image_file = generate_bracket_image(state)
         await channel.send(content=f"**[{tournament.game}] Final Bracket:**", file=image_file)

@@ -37,7 +37,7 @@ class HelpCog(commands.Cog, name="Help"):
         embed = discord.Embed(title="📅 Guide: Scheduling Tournaments", color=discord.Color.green())
         embed.add_field(
             name="1. Scheduling (`!create`)",
-            value="`!create {game} {date} {time} [frequency] [rules...]`\nExample: `!create Smash 2026-10-31 7PM monthly Best of 3 only.`\n*Note: All times are parsed as EST!*",
+            value="`!create {game} {date} {time} [frequency] [rules...]`\nExample: `!create Smash 2026-10-31 7PM monthly Best of 3 only.`\n*Note: All times are parsed as EST!*\n\n**Supported Frequencies:** `one-time`, `monthly`, `quarterly`, `bi-annually`, `annually`.\n*Background Info:* When a tournament concludes, the bot automatically reads the frequency. If it is NOT `one-time`, it instantly clones the tournament (carrying over the owners and rules) and sets the new date based on the time interval. It will then automatically alert players to start signing up again!",
             inline=False,
         )
         embed.add_field(name="2. Rescheduling (`!move`)", value="`!move {game} {date} {time}`", inline=False)
