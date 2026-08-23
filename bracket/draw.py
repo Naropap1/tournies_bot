@@ -202,5 +202,4 @@ def _draw_match_box(draw, x, y, w, h, match, font, is_gf=False, names_map=None):
     draw.line([x, y + h/2, x + w, y + h/2], fill=(80, 80, 80), width=1)
     draw.text((x + 10, y + h/2 + 5), p2, fill=p2_color, font=font)
     
-    if match.score and match.score != "W":
-        draw.text((x + w - 40, y + h/2 - 10), match.score, fill=(200, 200, 200), font=font)
+

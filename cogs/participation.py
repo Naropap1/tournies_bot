@@ -138,7 +138,7 @@ class ParticipationCog(commands.Cog, name="Participation"):
                 t.version = new_version
 
                 winner_id = match.player1_id if match.player2_id == ctx.author.id else match.player2_id
-                state, newly_opened = report_match_result(state, (match.round_num, match.match_number), winner_id, "FF")
+                state, newly_opened = report_match_result(state, (match.round_num, match.match_number), winner_id, None)
 
                 await self.bot.db.delete_matches(t.id)
                 await self.bot.db.insert_matches(state.matches)

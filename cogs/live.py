@@ -187,7 +187,7 @@ class LiveCog(commands.Cog, name="Live Bracket"):
 
         # Apply win
         try:
-            state, newly_opened = report_match_result(state, (match.round_num, match.match_number), winner_id, "W")
+            state, newly_opened = report_match_result(state, (match.round_num, match.match_number), winner_id, None)
         except Exception as e:
             await ctx.send(f"❌ Error applying result: {e}")
             return
@@ -318,7 +318,7 @@ class LiveCog(commands.Cog, name="Live Bracket"):
 
         winner_id = match.player1_id if match.player2_id == player_id else match.player2_id
         try:
-            state, newly_opened = report_match_result(state, (match.round_num, match.match_number), winner_id, "DQ")
+            state, newly_opened = report_match_result(state, (match.round_num, match.match_number), winner_id, None)
         except Exception as e:
             await ctx.send(f"❌ Error applying DQ: {e}")
             return
