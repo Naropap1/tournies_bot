@@ -60,28 +60,43 @@ A fully functional, native Discord tournament bot tailored for community hubs. T
 
 ### Scheduling (!create, !move, !upcoming, !co_owner)
 - !create {game} {date} {time} [frequency] [rules...]: Schedule a new tournament (Times are EST).
+  - *Example:* !create Smash 2026-10-31 7PM monthly Best of 3 until finals.
 - !move {game} {date} {time}: Reschedule a tournament.
+  - *Example:* !move Smash 2026-11-01 8PM
 - !co_owner {game} @User: Grant admin permissions for an event.
+  - *Example:* !co_owner Smash @AdminSteve
 - !upcoming: View all scheduled and live events.
+  - *Example:* !upcoming
 
 ### Participation (!join, !leave, !drop, !rules)
 - !join {game}: Sign up for the next tournament.
+  - *Example:* !join Smash
 - !leave {game}: Remove yourself from a scheduled tournament.
+  - *Example:* !leave Smash
 - !rules {game}: Read the custom rules for the event.
+  - *Example:* !rules Smash
 - !drop: Forfeit remaining matches in a live tournament.
+  - *Example:* !drop
 
 ### Live Execution (!start, !bracket, !win, !dq, !revert)
 - !start {game}: Lock the roster and generate the bracket.
+  - *Example:* !start Smash
 - !bracket {game}: Display the current bracket image.
-- !win {game} {score}: Report a match victory (e.g., !win Smash 2-1).
-- !dq {game} @Player: Disqualify a player (admin only).
+  - *Example:* !bracket Smash
+- !win {game} {score}: Report a match victory.
+  - *Example:* !win Smash 2-1
+- !dq {game} @Player: Disqualify an unresponsive player (admin only).
+  - *Example:* !dq Smash @LateGamer
 - !revert {game} {state_id}: Roll back the bracket to a previous state if a score was misreported.
+  - *Example:* !revert Smash 4
 
 ### Testing
 - !test_tourney [game]: Automatically create and start a dummy tournament with 5 players (admin only).
+  - *Example:* !test_tourney Smash
 
 ### Prestige (!leaderboard)
 - !leaderboard: View the reigning champion for every game.
+  - *Example:* !leaderboard
 
 ## Architecture
 
