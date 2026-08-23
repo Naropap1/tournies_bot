@@ -1,17 +1,19 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 
 @dataclass
 class Tournament:
     guild_id: int
     channel_id: int
     game: str
-    creator_id: int
     scheduled_at: datetime
     frequency: str
     status: str
     created_at: datetime
+    rules: str = "Standard rules apply."
+    version: int = 1
+    owners: List[int] = field(default_factory=list)
     id: Optional[int] = None
 
 @dataclass
@@ -35,6 +37,14 @@ class Match:
     status: str = 'pending'
     is_grand_finals: bool = False
     best_of: int = 3
+
+@dataclass
+class BracketSnapshot:
+    tournament_id: int
+    version: int
+    matches_json: str
+    created_at: datetime
+    id: Optional[int] = None
 
 @dataclass
 class Champion:

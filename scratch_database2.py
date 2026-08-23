@@ -1,4 +1,6 @@
-import aiosqlite
+import os
+
+code = '''import aiosqlite
 from datetime import datetime
 from typing import Optional, List, Any, Dict
 import json
@@ -463,3 +465,7 @@ class Database:
         ) as cursor:
             row = await cursor.fetchone()
             return bool(row)
+'''
+
+with open('db/database.py', 'w', encoding='utf-8') as f:
+    f.write(code)

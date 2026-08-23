@@ -1,27 +1,16 @@
-"""
-Custom Help Cog — Provides detailed step-by-step instructions for bot usage.
-"""
-
 import discord
 from discord.ext import commands
-
 
 class HelpCog(commands.Cog, name="Help"):
     """Custom help command with detailed guides."""
 
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
-        # Remove the default help command if it exists
         self.bot.help_command = None
 
     @commands.group(name="help", invoke_without_command=True)
     async def custom_help(self, ctx: commands.Context, command_name: str = None) -> None:
-        """
-        Main help menu.
-
-        Usage: !help [category]
-        """
-        # If they type `!help create` (an existing command), we can fall back to its docstring.
+        """Main help menu."""
         if command_name:
             cmd = self.bot.get_command(command_name)
             if cmd and cmd.name != "help":
@@ -37,140 +26,49 @@ class HelpCog(commands.Cog, name="Help"):
             description="Welcome to Tournies Bot! Choose a guide below to learn how to set up and run tournaments.",
             color=discord.Color.blue(),
         )
-        embed.add_field(
-            name="📅 `!help schedule`",
-            value="How to schedule and manage your tournaments (!create, !move, !upcoming).",
-            inline=False,
-        )
-        embed.add_field(
-            name="🎮 `!help play`",
-            value="For players: How to link your account, join, report scores, and drop.",
-            inline=False,
-        )
-        embed.add_field(
-            name="🔴 `!help live`",
-            value="For admins: How to start the tournament, manage the bracket, and DQ players.",
-            inline=False,
-        )
+        embed.add_field(name="📅 `!help schedule`", value="How to schedule and manage your tournaments (!create, !move, !upcoming, !co_owner).", inline=False)
+        embed.add_field(name="🎮 `!help play`", value="For players: How to join, report scores, and view rules.", inline=False)
+        embed.add_field(name="🔴 `!help live`", value="For admins: How to start, revert mistakes, and DQ players.", inline=False)
         embed.set_footer(text="Type !help <category> (e.g. !help live) to read a guide.")
         await ctx.send(embed=embed)
 
     @custom_help.command(name="schedule")
     async def help_schedule(self, ctx: commands.Context) -> None:
-        """Guide on scheduling tournaments."""
-        embed = discord.Embed(
-            title="📅 Guide: Scheduling Tournaments",
-            description="Use these commands to create and manage future events.",
-            color=discord.Color.green(),
-        )
+        embed = discord.Embed(title="📅 Guide: Scheduling Tournaments", color=discord.Color.green())
         embed.add_field(
-            name="1. Scheduling a Tournament",
-            value=(
-                "Use the `!create` command to schedule an event. The bot understands flexible dates and times.\n"
-                "**Usage:** `!create {game} {date} {time} [frequency]`\n"
-                "**Example:** `!create Smash 2026-10-31 7PM monthly`\n"
-                "Frequencies: `monthly`, `quarterly`, `bi-annually`, `annually`. The bot will automatically schedule the next iteration when this one finishes."
-            ),
+            name="1. Scheduling (`!create`)",
+            value="`!create {game} {date} {time} [frequency] [rules...]`\nExample: `!create Smash 2026-10-31 7PM monthly Best of 3 only.`\n*Note: All times are parsed as EST!*",
             inline=False,
         )
-        embed.add_field(
-            name="2. Rescheduling (`!move`)",
-            value=(
-                "Made a mistake? The creator can use `!move` to change the date.\n"
-                "**Usage:** `!move {game} {date} {time}`\n"
-                "**Example:** `!move Smash 2026-11-01 8PM`"
-            ),
-            inline=False,
-        )
-        embed.add_field(
-            name="3. Viewing the Schedule (`!upcoming`)",
-            value=(
-                "Use `!upcoming` anytime to see all scheduled events, their dates, and who has signed up so far."
-            ),
-            inline=False,
-        )
+        embed.add_field(name="2. Rescheduling (`!move`)", value="`!move {game} {date} {time}`", inline=False)
+        embed.add_field(name="3. Co-Owners (`!co_owner`)", value="`!co_owner {game} @User` to allow others to start/manage the event.", inline=False)
+        embed.add_field(name="4. Viewing (`!upcoming`)", value="See all scheduled events and rosters.", inline=False)
         await ctx.send(embed=embed)
 
     @custom_help.command(name="play")
     async def help_play(self, ctx: commands.Context) -> None:
-        """Guide for players signing up and reporting scores."""
-        embed = discord.Embed(
-            title="🎮 Guide: For Players",
-            color=discord.Color.purple(),
-        )
+        embed = discord.Embed(title="🎮 Guide: For Players", color=discord.Color.purple())
+        embed.add_field(name="1. Joining & Leaving", value="`!join {game}` to enter. `!leave {game}` to back out before it starts.", inline=False)
+        embed.add_field(name="2. Rules", value="`!rules {game}` to view the custom rules set by the organizer.", inline=False)
         embed.add_field(
-            name="1. Linking Start.gg (Optional)",
-            value=(
-                "If the tournament uses a Start.gg bracket, you should link your account so you appear correctly.\n"
-                "If you don't link, you will participate as a local 'phantom' entrant."
-            ),
+            name="3. Playing & Reporting",
+            value="When the tournament starts, open matches are posted to the Matchboard.\nReport wins: `!win {game} {score}` (e.g. `!win Smash 2-1`).",
             inline=False,
         )
-        embed.add_field(
-            name="2. Joining an Event",
-            value=(
-                "Once an admin schedules an event, use `!join {game}` (e.g., `!join Smash`) to enter the roster. "
-                "If you need to back out before it starts, use `!leave {game}`."
-            ),
-            inline=False,
-        )
-        embed.add_field(
-            name="3. Playing & Reporting Scores",
-            value=(
-                "When the tournament starts, the bot will ping you when your match is ready.\n"
-                "After playing, the **winner** must report the score.\n"
-                "**Usage:** `!win {your_wins}-{opponent_wins}` (e.g., `!win 2-1` or `!win 2-0`).\n"
-                "The bot automatically knows who your opponent is. Matches are Best-of-3, Finals are Best-of-5."
-            ),
-            inline=False,
-        )
-        embed.add_field(
-            name="4. Dropping Out",
-            value="If you must leave mid-tournament, type `!drop`. The bot will forfeit your active match and automatically forfeit any future losers bracket matches.",
-            inline=False,
-        )
+        embed.add_field(name="4. Dropping Out", value="`!drop` to forfeit mid-tournament.", inline=False)
         await ctx.send(embed=embed)
 
     @custom_help.command(name="live")
     async def help_live(self, ctx: commands.Context) -> None:
-        """Guide for running the live event."""
-        embed = discord.Embed(
-            title="🔴 Guide: Running a Live Tournament",
-            color=discord.Color.red(),
-        )
-        embed.add_field(
-            name="1. Starting the Bracket",
-            value=(
-                "When everyone is ready, the tournament creator runs `!start {game}`.\n"
-                "This locks the roster, generates the double-elimination bracket, and pings players for the first round of open matches. "
-                "You need at least 2 players to start."
-            ),
-            inline=False,
-        )
-        embed.add_field(
-            name="2. Checking Bracket State",
-            value=(
-                "Anyone can use `!bracket {game}` to view a text summary of the current bracket state, "
-                "including completed matches, open matches, and upcoming rounds."
-            ),
-            inline=False,
-        )
+        embed = discord.Embed(title="🔴 Guide: Running a Live Tournament", color=discord.Color.red())
+        embed.add_field(name="1. Starting (`!start`)", value="`!start {game}` generates the double-elimination bracket image and posts the first Matchboard.", inline=False)
+        embed.add_field(name="2. Brackets (`!bracket`)", value="`!bracket {game}` posts the latest visual tree image of the bracket.", inline=False)
         embed.add_field(
             name="3. Admin Controls",
-            value=(
-                "- **Disqualifications:** If a player is unresponsive, the creator can run `!dq @Player` to instantly forfeit their current match and drop them from the event.\n"
-                "- **Start.gg Sync:** If a result was reported wrong, fix it on the Start.gg website, then run `!sync` (admin only) to pull the corrected bracket state back into the bot."
-            ),
-            inline=False,
-        )
-        embed.add_field(
-            name="4. Conclusion",
-            value="When Grand Finals finishes, the bot automatically crowns the champion on the `!leaderboard` and schedules the next event based on the recurring frequency.",
+            value="- `!dq {game} @Player`: Disqualifies an unresponsive player.\n- `!revert {game} {state_id}`: Undo a misreported score by reverting the bracket to a previous state. The State ID is printed with every bracket image.",
             inline=False,
         )
         await ctx.send(embed=embed)
 
-
 async def setup(bot: commands.Bot) -> None:
-    """Load the Custom Help cog."""
     await bot.add_cog(HelpCog(bot))

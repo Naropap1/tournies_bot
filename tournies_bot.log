@@ -1,2 +1,40 @@
 2026-08-23 11:13:03,207 [WARNING] discord.client: PyNaCl is not installed, voice will NOT be supported
 2026-08-23 11:13:03,207 [WARNING] discord.client: davey is not installed, voice will NOT be supported
+2026-08-23 13:18:21,519 [WARNING] discord.client: PyNaCl is not installed, voice will NOT be supported
+2026-08-23 13:18:21,519 [WARNING] discord.client: davey is not installed, voice will NOT be supported
+2026-08-23 13:18:21,521 [INFO] discord.client: logging in using static token
+2026-08-23 13:18:22,285 [INFO] tournies_bot: Initializing database at D:\Code\tournies_bot\tournies.db ...
+2026-08-23 13:18:22,335 [INFO] tournies_bot: Database initialized successfully.
+2026-08-23 13:18:22,339 [INFO] tournies_bot: Loaded cog: cogs.help
+2026-08-23 13:18:22,347 [INFO] tournies_bot: Loaded cog: cogs.scheduling
+2026-08-23 13:18:22,350 [INFO] tournies_bot: Loaded cog: cogs.participation
+2026-08-23 13:18:22,382 [ERROR] tournies_bot: Failed to load cog cogs.live: Extension 'cogs.live' raised an error: NameError: name 'Tournament' is not defined
+Traceback (most recent call last):
+  File "C:\Users\narop\AppData\Local\Programs\Python\Python312\Lib\site-packages\discord\ext\commands\bot.py", line 962, in _load_from_module_spec
+    spec.loader.exec_module(lib)  # type: ignore
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap_external>", line 994, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "D:\Code\tournies_bot\cogs\live.py", line 50, in <module>
+    class LiveCog(commands.Cog, name="Live Execution"):
+  File "D:\Code\tournies_bot\cogs\live.py", line 268, in LiveCog
+    async def _conclude_tournament(self, channel, tournament: Tournament, state: BracketState) -> None:
+                                                              ^^^^^^^^^^
+NameError: name 'Tournament' is not defined
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\Code\tournies_bot\bot.py", line 67, in setup_hook
+    await self.load_extension(cog)
+  File "C:\Users\narop\AppData\Local\Programs\Python\Python312\Lib\site-packages\discord\ext\commands\bot.py", line 1040, in load_extension
+    await self._load_from_module_spec(spec, name)
+  File "C:\Users\narop\AppData\Local\Programs\Python\Python312\Lib\site-packages\discord\ext\commands\bot.py", line 965, in _load_from_module_spec
+    raise errors.ExtensionFailed(key, e) from e
+discord.ext.commands.errors.ExtensionFailed: Extension 'cogs.live' raised an error: NameError: name 'Tournament' is not defined
+2026-08-23 13:18:22,387 [INFO] tournies_bot: Loaded cog: cogs.prestige
+2026-08-23 13:18:22,389 [INFO] tournies_bot: Loaded cog: cogs.testing
+2026-08-23 13:18:22,391 [INFO] tasks.alerts: Alert loop started (interval: 30 min)
+2026-08-23 13:18:22,391 [INFO] tournies_bot: Loaded cog: tasks.alerts
+2026-08-23 13:18:22,987 [INFO] tournies_bot: Shutting down...
+2026-08-23 13:18:22,996 [INFO] tasks.alerts: Alert loop stopped.

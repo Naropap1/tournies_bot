@@ -306,6 +306,31 @@ def report_match_result(state: BracketState, match_id_or_number: Tuple[int, int]
     if route.loser_to and loser_id is not None and loser_id != _BYE_SENTINEL:
         _place_player_in_match(loser_id, route.loser_to, route.loser_slot)
             
+
+    # Bracket Reset Logic
+    if round_num == 0 and match_number == 1 and winner_id == match.player2_id:
+        # Losers bracket champion won GF1. We need a bracket reset (GF2).
+        # Check if GF2 already exists (just in case)
+        try:
+            gf2 = _get_match(state.matches, 0, 2)
+        except ValueError:
+            gf2 = Match(
+                id=None,
+                tournament_id=match.tournament_id,
+                round_num=0,
+                match_number=2,
+                player1_id=match.player1_id,
+                player2_id=match.player2_id,
+                winner_id=None,
+                score=None,
+                status='open',
+                is_grand_finals=True,
+                best_of=match.best_of
+            )
+            state.matches.append(gf2)
+            state.routes[(0, 2)] = BracketRoute(winner_to=None, winner_slot=1, loser_to=None, loser_slot=None)
+            newly_opened.append(gf2)
+
     return state, newly_opened
 
 def get_open_matches(state: BracketState) -> List[Match]:
@@ -318,11 +343,22 @@ def get_match_for_player(state: BracketState, player_id: int) -> Optional[Match]
     return None
 
 def is_bracket_complete(state: BracketState) -> bool:
-    gf = _get_match(state.matches, 0, 1)
-    return gf.status == 'complete'
+    try:
+        gf2 = _get_match(state.matches, 0, 2)
+        return gf2.status == 'complete'
+    except ValueError:
+        gf1 = _get_match(state.matches, 0, 1)
+        if gf1.status == 'complete' and gf1.winner_id == gf1.player1_id:
+            return True
+        return False
 
 def get_winner(state: BracketState) -> Optional[int]:
-    gf = _get_match(state.matches, 0, 1)
-    if gf.status == 'complete':
-        return gf.winner_id
+    try:
+        gf2 = _get_match(state.matches, 0, 2)
+        if gf2.status == 'complete':
+            return gf2.winner_id
+    except ValueError:
+        gf1 = _get_match(state.matches, 0, 1)
+        if gf1.status == 'complete' and gf1.winner_id == gf1.player1_id:
+            return gf1.winner_id
     return None

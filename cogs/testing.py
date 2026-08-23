@@ -1,15 +1,11 @@
-"""
-Testing Cog — !test_tourney
-"""
 import discord
 from discord.ext import commands
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
-from db.models import Tournament, Entrant, Match
-from config import BEST_OF_STANDARD, BEST_OF_FINALS
-from bracket.engine import generate_bracket, get_open_matches
+from db.models import Tournament, Entrant
+from bracket.engine import generate_bracket
 from bracket.draw import generate_bracket_image
-from cogs.live import _bracket_states, _announce_open_matches
 
 class TestingCog(commands.Cog, name="Testing"):
     def __init__(self, bot: commands.Bot):
@@ -24,11 +20,13 @@ class TestingCog(commands.Cog, name="Testing"):
             guild_id=ctx.guild.id,
             channel_id=ctx.channel.id,
             game=game,
-            creator_id=ctx.author.id,
-            scheduled_at=datetime.now(),
+            scheduled_at=datetime.now(ZoneInfo("UTC")),
             frequency="monthly",
             status="scheduled",
-            created_at=datetime.now(),
+            created_at=datetime.now(ZoneInfo("UTC")),
+            rules="Test rules.",
+            version=1,
+            owners=[ctx.author.id]
         )
         tournament.id = await self.bot.db.insert_tournament(tournament)
 
@@ -39,33 +37,18 @@ class TestingCog(commands.Cog, name="Testing"):
             ent = Entrant(
                 tournament_id=tournament.id,
                 discord_id=eid,
-                joined_at=datetime.now(),
+                joined_at=datetime.now(ZoneInfo("UTC")),
             )
             await self.bot.db.insert_entrant(ent)
 
         await ctx.send(f"✅ Created dummy tournament for **{game}** with 5 players.")
 
-        # 3. Start the tournament
-        state = generate_bracket(tournament.id, entrant_ids, BEST_OF_STANDARD, BEST_OF_FINALS)
-        _bracket_states[tournament.id] = state
-
-        for m in state.matches:
-            m.id = await self.bot.db.insert_match(m)
-
-        await self.bot.db.update_tournament(tournament.id, status="live")
-        
-        embed = discord.Embed(
-            title=f"🚀 Tournament Started: {game}",
-            description=f"The bracket is LIVE with 5 players!",
-            color=discord.Color.red(),
-        )
-        await ctx.send(embed=embed)
-
-        img_file = generate_bracket_image(state)
-        await ctx.send(file=img_file)
-
-        open_matches = get_open_matches(state)
-        await _announce_open_matches(ctx, tournament, open_matches)
+        # 3. Start the tournament using the actual live cog start command
+        live_cog = self.bot.get_cog("Live Execution")
+        if live_cog:
+            await live_cog.start_tournament(ctx, game)
+        else:
+            await ctx.send("❌ Live cog not found.")
 
 
 async def setup(bot: commands.Bot):

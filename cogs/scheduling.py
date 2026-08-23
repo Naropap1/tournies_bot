@@ -1,11 +1,6 @@
-"""
-Scheduling Cog — !create, !move, !upcoming
-
-Handles tournament creation, rescheduling, and viewing upcoming events.
-"""
-
 import logging
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 import discord
 from discord.ext import commands
@@ -15,28 +10,26 @@ from db.models import Tournament
 
 logger = logging.getLogger(__name__)
 
-
 def _parse_datetime(date_str: str, time_str: str) -> datetime:
     """
-    Parse flexible date/time inputs into a datetime.
-
-    Accepts:
-      date: 2026-09-15, 09/15/2026, Sep-15-2026
-      time: 7PM, 7:00PM, 19:00
+    Parse flexible date/time inputs into a datetime in EST timezone,
+    then convert to UTC for storage.
     """
-    # Normalize time
     time_str = time_str.upper().strip()
+    est = ZoneInfo("America/New_York")
+    
     for fmt_t in ("%I%p", "%I:%M%p", "%H:%M"):
         for fmt_d in ("%Y-%m-%d", "%m/%d/%Y", "%b-%d-%Y"):
             try:
-                return datetime.strptime(f"{date_str} {time_str}", f"{fmt_d} {fmt_t}")
+                dt_naive = datetime.strptime(f"{date_str} {time_str}", f"{fmt_d} {fmt_t}")
+                dt_est = dt_naive.replace(tzinfo=est)
+                return dt_est.astimezone(ZoneInfo("UTC"))
             except ValueError:
                 continue
     raise ValueError(
         f"Could not parse date/time: `{date_str} {time_str}`.\n"
         f"Accepted formats: `2026-09-15 7PM`, `09/15/2026 7:00PM`, `Sep-15-2026 19:00`"
     )
-
 
 class SchedulingCog(commands.Cog, name="Scheduling"):
     """Commands for creating and managing tournament schedules."""
@@ -46,21 +39,20 @@ class SchedulingCog(commands.Cog, name="Scheduling"):
 
     @commands.command(name="create")
     async def create_tournament(
-        self, ctx: commands.Context, game: str, date: str, time: str, frequency: str = DEFAULT_FREQUENCY
+        self, ctx: commands.Context, game: str, date: str, time: str, frequency: str = DEFAULT_FREQUENCY, *, rules: str = "Standard rules apply."
     ) -> None:
         """
-        Schedule a new tournament.
+        Schedule a new tournament. All times are parsed as EST.
 
-        Usage: !create {game} {date} {time} [frequency]
-        Example: !create Smash 2026-09-15 7PM monthly
-        Frequency options: monthly, quarterly, bi-annually, annually (default: monthly)
+        Usage: !create {game} {date} {time} [frequency] [rules...]
+        Example: !create Smash 2026-09-15 7PM monthly Best of 3 until finals. No items.
         """
         frequency = frequency.lower()
         if frequency not in VALID_FREQUENCIES:
-            await ctx.send(
-                f"❌ Invalid frequency `{frequency}`. Choose from: {', '.join(VALID_FREQUENCIES)}"
-            )
-            return
+            # Maybe the user didn't provide a frequency and went straight to rules
+            # We assume frequency is monthly and prepend the invalid freq to rules
+            rules = f"{frequency} {rules}".strip()
+            frequency = DEFAULT_FREQUENCY
 
         try:
             scheduled_at = _parse_datetime(date, time)
@@ -68,63 +60,50 @@ class SchedulingCog(commands.Cog, name="Scheduling"):
             await ctx.send(f"❌ {e}")
             return
 
-        if scheduled_at <= datetime.now():
+        if scheduled_at <= datetime.now(ZoneInfo("UTC")):
             await ctx.send("❌ Cannot schedule a tournament in the past.")
             return
 
-        # Check for existing scheduled tournament for this game in this guild
         existing = await self.bot.db.get_tournament_by_game(ctx.guild.id, game, status="scheduled")
         if existing:
-            await ctx.send(
-                f"❌ A `{game}` tournament is already scheduled for "
-                f"<t:{int(existing.scheduled_at.timestamp())}:F>. Use `!move {game}` to reschedule."
-            )
+            await ctx.send(f"❌ A `{game}` tournament is already scheduled. Use `!move {game}` to reschedule.")
             return
 
         tournament = Tournament(
             guild_id=ctx.guild.id,
             channel_id=ctx.channel.id,
             game=game,
-            creator_id=ctx.author.id,
             scheduled_at=scheduled_at,
             frequency=frequency,
             status="scheduled",
-            created_at=datetime.now(),
+            created_at=datetime.now(ZoneInfo("UTC")),
+            rules=rules,
+            owners=[ctx.author.id]
         )
         tournament_id = await self.bot.db.insert_tournament(tournament)
-        logger.info(
-            "Tournament #%d created: %s on %s by %s",
-            tournament_id, game, scheduled_at.isoformat(), ctx.author,
-        )
 
         embed = discord.Embed(
             title=f"🏆 Tournament Created: {game}",
+            description="**Times are parsed as EST.** Displaying in your local timezone below:",
             color=discord.Color.green(),
         )
         embed.add_field(name="📅 Date", value=f"<t:{int(scheduled_at.timestamp())}:F>", inline=True)
         embed.add_field(name="🔄 Frequency", value=frequency.capitalize(), inline=True)
-        embed.add_field(name="👑 Creator", value=ctx.author.mention, inline=True)
+        embed.add_field(name="👑 Owners", value=f"<@{ctx.author.id}>", inline=True)
+        embed.add_field(name="📜 Rules", value=f"`!rules {game}`", inline=False)
         embed.add_field(name="📝 How to Join", value=f"`!join {game}`", inline=False)
-        embed.set_footer(text=f"Tournament ID: {tournament_id}")
         await ctx.send(embed=embed)
 
     @commands.command(name="move")
-    async def move_tournament(
-        self, ctx: commands.Context, game: str, date: str, time: str
-    ) -> None:
-        """
-        Reschedule a tournament (creator only).
-
-        Usage: !move {game} {date} {time}
-        Example: !move Smash 2026-09-20 8PM
-        """
+    async def move_tournament(self, ctx: commands.Context, game: str, date: str, time: str) -> None:
+        """Reschedule a tournament (owners only). Uses EST."""
         tournament = await self.bot.db.get_tournament_by_game(ctx.guild.id, game, status="scheduled")
         if not tournament:
             await ctx.send(f"❌ No scheduled `{game}` tournament found.")
             return
 
-        if tournament.creator_id != ctx.author.id:
-            await ctx.send("❌ Only the tournament creator can reschedule.")
+        if ctx.author.id not in tournament.owners and not ctx.author.guild_permissions.administrator:
+            await ctx.send("❌ Only tournament owners can reschedule.")
             return
 
         try:
@@ -133,16 +112,8 @@ class SchedulingCog(commands.Cog, name="Scheduling"):
             await ctx.send(f"❌ {e}")
             return
 
-        if new_time <= datetime.now():
-            await ctx.send("❌ Cannot reschedule to a past date.")
-            return
-
         old_time = tournament.scheduled_at
         await self.bot.db.update_tournament(tournament.id, scheduled_at=new_time)
-        logger.info(
-            "Tournament #%d (%s) rescheduled: %s -> %s",
-            tournament.id, game, old_time.isoformat(), new_time.isoformat(),
-        )
 
         embed = discord.Embed(
             title=f"📅 Tournament Rescheduled: {game}",
@@ -150,16 +121,50 @@ class SchedulingCog(commands.Cog, name="Scheduling"):
         )
         embed.add_field(name="Old Date", value=f"<t:{int(old_time.timestamp())}:F>", inline=True)
         embed.add_field(name="New Date", value=f"<t:{int(new_time.timestamp())}:F>", inline=True)
-        embed.set_footer(text=f"Rescheduled by {ctx.author.display_name}")
+        await ctx.send(embed=embed)
+
+    @commands.command(name="co_owner")
+    async def co_owner(self, ctx: commands.Context, game: str, member: discord.Member) -> None:
+        """Add a co-owner to a tournament."""
+        tournament = await self.bot.db.get_tournament_by_game(ctx.guild.id, game, status="scheduled")
+        if not tournament:
+            tournament = await self.bot.db.get_tournament_by_game(ctx.guild.id, game, status="live")
+        
+        if not tournament:
+            await ctx.send(f"❌ No active `{game}` tournament found.")
+            return
+
+        if ctx.author.id not in tournament.owners and not ctx.author.guild_permissions.administrator:
+            await ctx.send("❌ Only tournament owners can add co-owners.")
+            return
+
+        if member.id in tournament.owners:
+            await ctx.send(f"❌ {member.mention} is already an owner.")
+            return
+
+        await self.bot.db.add_owner(tournament.id, member.id)
+        await ctx.send(f"✅ {member.mention} has been added as a co-owner for `{game}`!")
+
+    @commands.command(name="rules")
+    async def rules(self, ctx: commands.Context, game: str) -> None:
+        """View the rules for a specific tournament."""
+        tournament = await self.bot.db.get_tournament_by_game(ctx.guild.id, game, status="scheduled")
+        if not tournament:
+            tournament = await self.bot.db.get_tournament_by_game(ctx.guild.id, game, status="live")
+            
+        if not tournament:
+            await ctx.send(f"❌ No active `{game}` tournament found.")
+            return
+
+        embed = discord.Embed(
+            title=f"📜 Rules: {game}",
+            description=tournament.rules,
+            color=discord.Color.blue()
+        )
         await ctx.send(embed=embed)
 
     @commands.command(name="upcoming")
     async def upcoming_tournaments(self, ctx: commands.Context) -> None:
-        """
-        View all scheduled and live events with their rosters.
-
-        Usage: !upcoming
-        """
         tournaments = await self.bot.db.get_upcoming_tournaments(ctx.guild.id)
         if not tournaments:
             await ctx.send("📭 No upcoming tournaments scheduled. Use `!create` to make one!")
@@ -172,22 +177,19 @@ class SchedulingCog(commands.Cog, name="Scheduling"):
         for t in sorted(tournaments, key=lambda x: x.scheduled_at):
             entrants = await self.bot.db.get_entrants(t.id)
             status_emoji = "🟢" if t.status == "live" else "📅"
-            roster = ", ".join(f"<@{e.discord_id}>" for e in entrants) if entrants else "_No signups yet_"
-
+            owners_str = ", ".join(f"<@{o}>" for o in t.owners)
+            
             embed.add_field(
                 name=f"{status_emoji} {t.game} — <t:{int(t.scheduled_at.timestamp())}:R>",
                 value=(
                     f"**Date:** <t:{int(t.scheduled_at.timestamp())}:F>\n"
-                    f"**Frequency:** {t.frequency.capitalize()}\n"
-                    f"**Creator:** <@{t.creator_id}>\n"
-                    f"**Roster ({len(entrants)}):** {roster}\n"
+                    f"**Owners:** {owners_str}\n"
+                    f"**Roster ({len(entrants)}):** {len(entrants)} signed up\n"
                     f"**Status:** {t.status.capitalize()}"
                 ),
                 inline=False,
             )
         await ctx.send(embed=embed)
 
-
 async def setup(bot: commands.Bot) -> None:
-    """Load the Scheduling cog."""
     await bot.add_cog(SchedulingCog(bot))
