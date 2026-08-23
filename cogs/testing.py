@@ -44,7 +44,7 @@ class TestingCog(commands.Cog, name="Testing"):
         await ctx.send(f"✅ Created dummy tournament for **{game}** with 5 players.")
 
         # 3. Start the tournament using the actual live cog start command
-        live_cog = self.bot.get_cog("Live Execution")
+        live_cog = self.bot.get_cog("Live Bracket")
         if live_cog:
             await live_cog.start_tournament(ctx, game)
         else:

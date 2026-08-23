@@ -47,9 +47,23 @@ def _deserialize_matches(json_str: str) -> list[Match]:
         best_of=d['best_of']
     ) for d in data]
 
-class LiveCog(commands.Cog, name="Live Execution"):
+class LiveCog(commands.Cog, name="Live Bracket"):
+    """Commands for running active tournaments."""
+
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
+
+    def _get_bracket_image(self, guild, state):
+        names_map = {}
+        for m in state.matches:
+            for pid in (m.player1_id, m.player2_id):
+                if pid and pid not in names_map:
+                    member = guild.get_member(pid)
+                    if pid < 1000:
+                        names_map[pid] = f"User{pid}"
+                    else:
+                        names_map[pid] = member.display_name if member else str(pid)
+        return generate_bracket_image(state, names_map=names_map)
 
     async def _post_matchboard(self, channel, tournament, state: BracketState):
         open_matches = get_open_matches(state)
@@ -58,8 +72,10 @@ class LiveCog(commands.Cog, name="Live Execution"):
 
         desc = ""
         for m in open_matches:
+            p1 = f"<@{m.player1_id}>" if m.player1_id > 1000 else f"@User{m.player1_id}"
+            p2 = f"<@{m.player2_id}>" if m.player2_id > 1000 else f"@User{m.player2_id}"
             title = f"Round {m.round_num}" if m.round_num > 0 else (f"Grand Finals" if m.round_num == 0 else f"Losers Round {abs(m.round_num)}")
-            desc += f"**{title} (Match {m.match_number})**\n<@{m.player1_id}> vs <@{m.player2_id}>\n\n"
+            desc += f"**{title} (Match {m.match_number})**\n{p1} vs {p2}\n\n"
         
         embed = discord.Embed(
             title=f"[{tournament.game}] ⚔️ Open Matches (State: {tournament.version})",
@@ -92,7 +108,7 @@ class LiveCog(commands.Cog, name="Live Execution"):
 
         await ctx.send(f"🏆 **[{game}] Tournament has begun!** Roster locked with {len(entrants)} players.")
         
-        image_file = generate_bracket_image(state)
+        image_file = self._get_bracket_image(ctx.guild, state)
         await ctx.send(content=f"**[{game}] Initial Bracket:** (State: 1)", file=image_file)
         
         await self._post_matchboard(ctx.channel, tournament, state)
@@ -112,7 +128,7 @@ class LiveCog(commands.Cog, name="Live Execution"):
         state = generate_bracket(tournament.id, []) # Empty entrants to just get the routes
         state.matches = matches
         
-        image_file = generate_bracket_image(state)
+        image_file = self._get_bracket_image(ctx.guild, state)
         await ctx.send(content=f"**[{game}] Current Bracket:** (State: {tournament.version})", file=image_file)
 
     @commands.command(name="win")
@@ -160,9 +176,12 @@ class LiveCog(commands.Cog, name="Live Execution"):
         await self.bot.db.insert_matches(state.matches)
 
         loser_id = match.player1_id if match.player2_id == winner_id else match.player2_id
-        await ctx.send(f"✅ **[{game}]** <@{winner_id}> defeated <@{loser_id}>!")
         
-        image_file = generate_bracket_image(state)
+        w_ping = f"<@{winner_id}>" if winner_id > 1000 else f"@User{winner_id}"
+        l_ping = f"<@{loser_id}>" if loser_id > 1000 else f"@User{loser_id}"
+        await ctx.send(f"✅ **[{game}]** {w_ping} defeated {l_ping}!")
+        
+        image_file = self._get_bracket_image(ctx.guild, state)
         await ctx.send(content=f"**[{game}] Bracket Updated:** (State: {tournament.version})", file=image_file)
 
         if is_bracket_complete(state):
@@ -202,7 +221,7 @@ class LiveCog(commands.Cog, name="Live Execution"):
         state.matches = restored_matches
 
         await ctx.send(f"⏪ **[{game}] Bracket reverted to State {version}.**")
-        image_file = generate_bracket_image(state)
+        image_file = self._get_bracket_image(ctx.guild, state)
         await ctx.send(content=f"**[{game}] Current Bracket:** (State: {version})", file=image_file)
         await self._post_matchboard(ctx.channel, tournament, state)
 
@@ -256,8 +275,14 @@ class LiveCog(commands.Cog, name="Live Execution"):
             await self._post_matchboard(ctx.channel, tournament, state)
 
     async def _conclude_tournament(self, channel, tournament: Tournament, state: BracketState) -> None:
+        class FakeCtx:
+            def __init__(self):
+                self.guild = channel.guild
+        ctx = FakeCtx()
         winner_id = get_winner(state)
         await self.bot.db.update_tournament(tournament.id, status="completed")
+        
+        w_ping = f"<@{winner_id}>" if winner_id > 1000 else f"@User{winner_id}"
         
         # Insert Champion
         from db.models import Champion
@@ -272,7 +297,7 @@ class LiveCog(commands.Cog, name="Live Execution"):
 
         embed = discord.Embed(
             title=f"🏆 [{tournament.game}] Tournament Completed! 🏆",
-            description=f"**Congratulations to <@{winner_id}> for winning it all!**",
+            description=f"**Congratulations to {w_ping} for winning it all!**",
             color=discord.Color.gold()
         )
         
@@ -307,7 +332,7 @@ class LiveCog(commands.Cog, name="Live Execution"):
             embed.add_field(name="🔄 Auto-Rescheduled", value=f"The next **{tournament.game}** event is scheduled for <t:{int(next_date.timestamp())}:F>!", inline=False)
 
         await channel.send(embed=embed)
-        image_file = generate_bracket_image(state)
+        image_file = self._get_bracket_image(ctx.guild, state)
         await channel.send(content=f"**[{tournament.game}] Final Bracket:**", file=image_file)
 
 async def setup(bot: commands.Bot) -> None:
