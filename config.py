@@ -20,6 +20,9 @@ BOT_DESCRIPTION: str = "Tournies Bot — Automated tournament scheduling & brack
 # --- Database ---
 DB_PATH: str = str(Path(__file__).parent / "tournies.db")
 
+# --- Permissions ---
+ALLOWED_CHANNELS: list[str] = [ch.strip() for ch in os.getenv("ALLOWED_CHANNELS", "tournaments,bot-test").split(",") if ch.strip()]
+
 # --- Start.gg API ---
 
 # --- Tournament Defaults ---

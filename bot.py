@@ -46,6 +46,20 @@ class TourniesBot(commands.Bot):
         )
         self.db = Database(DB_PATH)
 
+        # Global check: only allow commands in specific channels
+        @self.check
+        async def globally_block_channels(ctx: commands.Context) -> bool:
+            from config import ALLOWED_CHANNELS
+            
+            if ctx.guild is None:
+                return False  # Block all DMs
+
+            # If the list is empty, allow all channels
+            if not ALLOWED_CHANNELS:
+                return True
+                
+            return ctx.channel.name in ALLOWED_CHANNELS
+
     async def setup_hook(self) -> None:
         """Called when the bot is starting up. Initialize DB and load cogs."""
         logger.info("Initializing database at %s ...", DB_PATH)
@@ -91,6 +105,9 @@ class TourniesBot(commands.Bot):
             await ctx.send(f"❌ Missing argument: `{error.param.name}`. Use `!help {ctx.command}` for usage.")
             return
         if isinstance(error, commands.CheckFailure):
+            from config import ALLOWED_CHANNELS
+            if ALLOWED_CHANNELS and ctx.channel.name not in ALLOWED_CHANNELS:
+                return  # Silently ignore if they try to use it in the wrong channel
             await ctx.send("❌ You don't have permission to use this command.")
             return
         if isinstance(error, commands.BadArgument):
