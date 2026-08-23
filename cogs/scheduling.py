@@ -173,16 +173,20 @@ class SchedulingCog(commands.Cog, name="Scheduling"):
             return
             
         last_part = parts[-1]
-        member = None
+        member_id = None
         game = " ".join(parts[:-1])
-        if last_part.startswith('<@') and last_part.endswith('>'):
+        
+        if last_part.lower().startswith('@user') and last_part[5:].isdigit():
+            member_id = int(last_part[5:])
+        elif last_part.isdigit() and len(last_part) < 17:
+            member_id = int(last_part)
+        elif last_part.startswith('<@') and last_part.endswith('>'):
             try:
                 member_id = int(last_part[2:-1].replace('!', ''))
-                member = ctx.guild.get_member(member_id)
             except ValueError:
                 pass
                 
-        if not member:
+        if not member_id:
             await ctx.send("❌ Could not resolve the player ping. Usage: `!co_owner {game} @Player`")
             return
 
@@ -198,12 +202,15 @@ class SchedulingCog(commands.Cog, name="Scheduling"):
             await ctx.send("❌ Only tournament owners can add co-owners.")
             return
 
-        if member.id in tournament.owners:
-            await ctx.send(f"❌ {member.mention} is already an owner.")
+        if member_id in tournament.owners:
+            await ctx.send(f"❌ <@{member_id}> is already an owner.")
             return
 
-        await self.bot.db.add_owner(tournament.id, member.id)
-        await ctx.send(f"✅ {member.mention} has been added as a co-owner for `{game}`!")
+        await self.bot.db.add_owner(tournament.id, member_id)
+        
+        # Display nicely for dummy vs real users
+        mention = f"@User{member_id}" if member_id < 1000 else f"<@{member_id}>"
+        await ctx.send(f"✅ {mention} has been added as a co-owner for `{game}`!")
 
     @commands.command(name="rules")
     async def rules(self, ctx: commands.Context, *, game: str) -> None:

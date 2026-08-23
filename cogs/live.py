@@ -135,26 +135,32 @@ class LiveCog(commands.Cog, name="Live Bracket"):
     async def report_win(self, ctx: commands.Context, *, args: str) -> None:
         args = args.strip()
         parts = args.split()
-        winner = None
+        winner_id = None
         game = args
+        
         if parts:
             last_part = parts[-1]
-            if last_part.startswith('<@') and last_part.endswith('>'):
+            if last_part.lower().startswith('@user') and last_part[5:].isdigit():
+                winner_id = int(last_part[5:])
+                game = " ".join(parts[:-1])
+            elif last_part.isdigit() and len(last_part) < 17:
+                winner_id = int(last_part)
+                game = " ".join(parts[:-1])
+            elif last_part.startswith('<@') and last_part.endswith('>'):
                 try:
-                    member_id = int(last_part[2:-1].replace('!', ''))
-                    winner = ctx.guild.get_member(member_id)
-                    if winner:
-                        game = " ".join(parts[:-1])
+                    winner_id = int(last_part[2:-1].replace('!', ''))
+                    game = " ".join(parts[:-1])
                 except ValueError:
                     pass
         
+        # If the user didn't specify a winner, default to the author
+        if not winner_id:
+            winner_id = ctx.author.id
+            
         tournament = await self.bot.db.get_tournament_by_game(ctx.guild.id, game, status="live")
         if not tournament:
             await ctx.send(f"❌ No active `{game}` tournament found.")
             return
-
-        winner_id = winner.id if winner else ctx.author.id
-        
         matches = await self.bot.db.get_matches(tournament.id)
         state = generate_bracket(tournament.id, [])
         state.matches = matches
@@ -262,16 +268,20 @@ class LiveCog(commands.Cog, name="Live Bracket"):
             return
             
         last_part = parts[-1]
-        player = None
+        player_id = None
         game = " ".join(parts[:-1])
-        if last_part.startswith('<@') and last_part.endswith('>'):
+        
+        if last_part.lower().startswith('@user') and last_part[5:].isdigit():
+            player_id = int(last_part[5:])
+        elif last_part.isdigit() and len(last_part) < 17:
+            player_id = int(last_part)
+        elif last_part.startswith('<@') and last_part.endswith('>'):
             try:
-                member_id = int(last_part[2:-1].replace('!', ''))
-                player = ctx.guild.get_member(member_id)
+                player_id = int(last_part[2:-1].replace('!', ''))
             except ValueError:
                 pass
                 
-        if not player:
+        if not player_id:
             await ctx.send("❌ Could not resolve the player ping. Usage: `!dq {game} @Player`")
             return
 
@@ -288,9 +298,9 @@ class LiveCog(commands.Cog, name="Live Bracket"):
         state = generate_bracket(tournament.id, [])
         state.matches = matches
 
-        match = get_match_for_player(state, player.id)
+        match = get_match_for_player(state, player_id)
         if not match:
-            await ctx.send(f"❌ <@{player.id}> is not currently in an open match.")
+            await ctx.send(f"❌ <@{player_id}> is not currently in an open match.")
             return
 
         # Snapshot before DQ
@@ -305,7 +315,7 @@ class LiveCog(commands.Cog, name="Live Bracket"):
         await self.bot.db.update_tournament(tournament.id, version=new_version)
         tournament.version = new_version
 
-        winner_id = match.player1_id if match.player2_id == player.id else match.player2_id
+        winner_id = match.player1_id if match.player2_id == player_id else match.player2_id
         try:
             state, newly_opened = report_match_result(state, (match.round_num, match.match_number), winner_id, "DQ")
         except Exception as e:
@@ -315,7 +325,9 @@ class LiveCog(commands.Cog, name="Live Bracket"):
         await self.bot.db.delete_matches(tournament.id)
         await self.bot.db.insert_matches(state.matches)
 
-        await ctx.send(f"🚨 **[{game}]** <@{player.id}> has been disqualified. <@{winner_id}> advances.")
+        p_ping = f"@User{player_id}" if player_id < 1000 else f"<@{player_id}>"
+        w_ping = f"@User{winner_id}" if winner_id < 1000 else f"<@{winner_id}>"
+        await ctx.send(f"🚨 **[{game}]** {p_ping} has been disqualified. {w_ping} advances.")
         
         if is_bracket_complete(state):
             await self._conclude_tournament(ctx.channel, tournament, state)
